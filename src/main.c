@@ -24,6 +24,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 
+/* Prototype Signatures for Sensors */
 #include "sensors.h"
 
 #define DEBUG_FLAG 0
@@ -34,10 +35,6 @@
 #define MICROSECONDS_UNTIL_TERMINATE 4000000
 #define PERIOD_DISPLAY                100000
 #define PERIOD_SCAN                    25000
-
-/* Prototype Signatures for Sensors */
-void* t_sensor_line(void* arg);
-void* t_sensor_ir(void* arg);
 
 /* Globals for threads to update */
 int val_line = -1;
