@@ -24,6 +24,8 @@
 #include <stdlib.h>
 #include <pthread.h>
 
+#include "sensors.h"
+
 #define DEBUG_FLAG 0
 
 #define PIN_SENSOR_IR   13
