@@ -15,7 +15,14 @@
  *
  * *************/
 
-
+/* Struct to hold all sensor data */
+//Note that this is intended to be malloc'd as a whole struct,
+//Each function will take in a SINGLE memory address pointer
+//We feed in the pointer to the value within the struct it is supposed to update.
+typedef struct SENSOR_DATA{
+  int main_ir;
+  int main_line;
+} sensor_data_t;
 
 /* Prototypes for Sensor Data */
 void* t_sensor_line(void* arg);
