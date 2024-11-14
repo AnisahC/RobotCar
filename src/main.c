@@ -59,13 +59,30 @@ int main(int argc, char* agv[]){
     return -1;
   }
 
+  int* genericdata = malloc(sizeof(int));
+  if(genericdata == NULL){
+    printf("[!] Malloc failed!\n");
+    return -1;
+  }
+  *genericdata = 0;
+
+  sensor_data_t* genericstruct = malloc(sizeof(sensor_data_t));
+  if(genericstruct == NULL){
+    printf("[!] Malloc failed!\n");
+    free(genericdata);
+    return -1;
+  }
+
   // STEP 2: SPAWN THREADS
   printf("Spawning threads...\n");
 
   pthread_t thread_line,
-            thread_ir;
-  pthread_create(&thread_line,NULL, t_sensor_line,NULL);
-  pthread_create(&thread_ir,  NULL, t_sensor_ir,  NULL);
+            thread_ir,
+            thread_generic;
+  pthread_create(&thread_line,    NULL, t_sensor_line,NULL);
+  pthread_create(&thread_ir,      NULL, t_sensor_ir,  NULL);
+  pthread_create(&thread_generic, NULL, th_sensor,    genericstruct);
+  genericstruct = NULL;//This will be freed by the thread, setting to NULL here for safety
 
   //loop while time is not
   while(microsecRemaining > 0){
@@ -85,6 +102,8 @@ int main(int argc, char* agv[]){
     else
       {printf("NO OBSTRUCTION.\n");}
 
+    printf("Generic Data! [%d]\n", *genericdata);
+
     //If both sensors pick up something, decrement time to naturally end program
     if(val_ir == 0 && val_line != 0){
       //useconds_t has invalid behavior when becoming negative
@@ -103,13 +122,20 @@ int main(int argc, char* agv[]){
   printf("Terminating program...\n");
 
   if(pthread_join(thread_line, NULL) != 0){
-    printf("[!] Error joing thread_line!\n");
+    printf("[!] Error joining thread_line!\n");
     return -1;
   }
   if(pthread_join(thread_ir, NULL) != 0){
-    printf("[!] Error joing thread_ir!\n");
+    printf("[!] Error joining thread_ir!\n");
     return -1;
   }
+  if(pthread_join(thread_generic, NULL) != 0){
+    printf("[!] Error joining thread_generic!\n");
+    return -1;
+  }
+
+  free(genericdata);
+  genericdata = NULL;
 
   gpioTerminate();
   return 0;
