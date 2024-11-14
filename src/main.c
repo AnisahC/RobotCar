@@ -72,6 +72,8 @@ int main(int argc, char* agv[]){
     free(genericdata);
     return -1;
   }
+  genericstruct->data = genericdata;
+  genericstruct->pin  = PIN_SENSOR_IR;
 
   // STEP 2: SPAWN THREADS
   printf("Spawning threads...\n");
