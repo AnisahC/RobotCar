@@ -32,6 +32,7 @@ typedef struct SENSOR_DATA{
 } sensor_data_t;
 
 /* Prototypes for Sensor Data */
+void* th_sensor    (void* arg);
 void* t_sensor_line(void* arg);
 void* t_sensor_ir  (void* arg);
 
