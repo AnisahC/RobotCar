@@ -24,10 +24,11 @@
 /* Struct to hold all sensor data */
 //Note that this is intended to be malloc'd as a whole struct,
 //Each function will take in a SINGLE memory address pointer
-//We feed in the pointer to the value within the struct it is supposed to update.
+//We feed in the pointer to the struct, get the relevant data
+//free the parameter struct, BUT NOT THE POINTER INSIDE
 typedef struct SENSOR_DATA{
-  int main_ir;
-  int main_line;
+  int* data;//address of data to change
+  int  pin;//pin number to read from
 } sensor_data_t;
 
 /* Prototypes for Sensor Data */
