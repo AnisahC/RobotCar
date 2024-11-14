@@ -15,6 +15,12 @@
  *
  * *************/
 
+/* DEFINES */
+//Period between displaying to terminal
+#define PERIOD_DISPLAY                100000
+//Period between sensors updating their values
+#define PERIOD_SCAN                    25000
+
 /* Struct to hold all sensor data */
 //Note that this is intended to be malloc'd as a whole struct,
 //Each function will take in a SINGLE memory address pointer
