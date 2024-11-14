@@ -44,7 +44,7 @@ void* th_sensor(void* arg){
   arg = NULL;
 
   while(1){
-    *data = gpioRead(data);
+    *data = gpioRead(pin);
 
     if(usleep(PERIOD_SCAN) != 0){
        printf("[!] usleep failed!\n");
