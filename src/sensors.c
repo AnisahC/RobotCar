@@ -15,15 +15,41 @@
  *
  * *************/
 
+#include <pigpio.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <time.h>
+#include <stdbool.h>
+#include <stdlib.h>
+#include <pthread.h>
+
+/* Prototype Signatures for Sensors */
 #include "sensors.h"
 
-//void* t_sensor_line(void* arg){
+#define DEBUG_FLAG 0
 
-  //TODO:
-  //Make Generic (IR sensor and Line sensor function the same)
-  //Pass in pin number
-  //Make seperate header with the global values.
+void* th_sensor(void* arg){
 
+  #if(DEBUG_FLAG)
+  printf("t_sensor_line(%p)\n", arg);
+  #endif
+  
+  //Get pointer to field to mutate
+  int* data = ((sensor_data_t*) arg)->data;
+  //Get Pin number to read from
+  int pin = ((sensor_data_t*) arg)->pin;
+  
+  //Free memory of parameter and set to null, NEVER USE AFTER THIS POINT
+  free(arg);
+  arg = NULL;
 
-//  return NULL;
-//}
+  while(1){
+    *data = gpioRead(data);
+
+    if(usleep(PERIOD_SCAN) != 0){
+       printf("[!] usleep failed!\n");
+       return NULL;
+    }
+  }
+  return NULL;
+}
