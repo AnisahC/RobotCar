@@ -27,7 +27,7 @@
 /* Prototype Signatures for Sensors */
 #include "sensors.h"
 
-#define DEBUG_FLAG 0
+#define DEBUG_FLAG 1
 
 #define PIN_SENSOR_IR   13
 #define PIN_SENSOR_LINE 27
@@ -64,6 +64,7 @@ int main(int argc, char* agv[]){
     printf("[!] malloc failed!\n");
     return -1;
   }
+  *microsec_remaining = MICROSECONDS_UNTIL_TERMINATE;
 
 
   int* genericdata = malloc(sizeof(int));
@@ -83,7 +84,7 @@ int main(int argc, char* agv[]){
   }
   genericstruct->data = genericdata;
   genericstruct->pin  = PIN_SENSOR_IR;
-
+  genericstruct->time = microsec_remaining;
   // STEP 2: SPAWN THREADS
   printf("Spawning threads...\n");
 
@@ -120,11 +121,13 @@ int main(int argc, char* agv[]){
       //useconds_t has invalid behavior when becoming negative
       //set time remaining to 0 if decrement would make it negative
       if(microsecRemaining <= PERIOD_DISPLAY)
-        {microsecRemaining = 0;}
+        {microsecRemaining = 0; *microsec_remaining = 0;}
       else
-        {microsecRemaining -= PERIOD_DISPLAY;}
+        {microsecRemaining -= PERIOD_DISPLAY; *microsec_remaining -= PERIOD_DISPLAY;}
       #if(DEBUG_FLAG)
       printf("main microsecRemaining: [%d]\n", microsecRemaining);
+      printf("main microsec_remaining: (%p)\n", microsec_remaining);
+      printf("main microsec_remaining: [%d]\n", *microsec_remaining);
       #endif
     }
   }

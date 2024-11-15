@@ -38,12 +38,14 @@ void* th_sensor(void* arg){
   int* data = ((sensor_data_t*) arg)->data;
   //Get Pin number to read from
   int pin = ((sensor_data_t*) arg)->pin;
-  
+  //Get pointer to timer
+  useconds_t* time = ((sensor_data_t*) arg)->time;
+
   //Free memory of parameter and set to null, NEVER USE AFTER THIS POINT
   free(arg);
   arg = NULL;
 
-  while(1){
+  while(*time > 0){
     *data = gpioRead(pin);
 
     if(usleep(PERIOD_SCAN) != 0){

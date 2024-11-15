@@ -27,8 +27,9 @@
 //We feed in the pointer to the struct, get the relevant data
 //free the parameter struct, BUT NOT THE POINTER INSIDE
 typedef struct SENSOR_DATA{
-  int* data;//address of data to change
-  int  pin;//pin number to read from
+  int*        data;//address of data to change
+  int         pin;//pin number to read from
+  useconds_t* time;//time to terminate all threads
 } sensor_data_t;
 
 /* Prototypes for Sensor Data */
