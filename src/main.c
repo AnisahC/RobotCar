@@ -41,7 +41,12 @@ int val_line = -1;
 int val_ir = -1;
 
 /* Global timer to stop program naturally */
-useconds_t microsecRemaining = MICROSECONDS_UNTIL_TERMINATE;
+useconds_t  microsecRemaining = MICROSECONDS_UNTIL_TERMINATE;
+useconds_t* microsec_remaining = malloc(useconds_t);
+if(microsec_remaining == NULL){
+  printf("[!] malloc failed!\n");
+  return -1;
+}
 
 /* MAIN METHOD */
 int main(int argc, char* agv[]){
@@ -50,18 +55,21 @@ int main(int argc, char* agv[]){
   printf("Initializing...\n");
   if(gpioInitialise()<0){
     printf("[!] Initialization of pigpio failed! Aborting!\n");
+    free(microsec_remaining);
     return -1;
   }
 
   if( (gpioSetMode(PIN_SENSOR_LINE, PI_INPUT)<0) || 
       (gpioSetMode(PIN_SENSOR_IR, PI_INPUT)<0)){
     printf("[!] gpioSetMode failed! Aborting!\n");
+    free(microsec_remaining);
     return -1;
   }
 
   int* genericdata = malloc(sizeof(int));
   if(genericdata == NULL){
     printf("[!] Malloc failed!\n");
+    free(microsec_remaining);
     return -1;
   }
   *genericdata = 0;
@@ -69,6 +77,7 @@ int main(int argc, char* agv[]){
   sensor_data_t* genericstruct = malloc(sizeof(sensor_data_t));
   if(genericstruct == NULL){
     printf("[!] Malloc failed!\n");
+    free(microsec_remaining);
     free(genericdata);
     return -1;
   }
@@ -125,17 +134,25 @@ int main(int argc, char* agv[]){
 
   if(pthread_join(thread_line, NULL) != 0){
     printf("[!] Error joining thread_line!\n");
+    free(microsec_remaining);
+    free(genericdata);
     return -1;
   }
   if(pthread_join(thread_ir, NULL) != 0){
     printf("[!] Error joining thread_ir!\n");
+    free(microsec_remaining);
+    free(genericdata);
     return -1;
   }
   if(pthread_join(thread_generic, NULL) != 0){
     printf("[!] Error joining thread_generic!\n");
+    free(microsec_remaining);
+    free(genericdata);
     return -1;
   }
 
+  free(microsec_remaining);
+  microsec_remaining = NULL;
   free(genericdata);
   genericdata = NULL;
 
