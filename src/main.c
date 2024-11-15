@@ -97,7 +97,7 @@ int main(int argc, char* agv[]){
   genericstruct = NULL;//This will be freed by the thread, setting to NULL here for safety
 
   //loop while time is not
-  while(microsecRemaining > 0){
+  while(*microsec_remaining > 0){
     usleep(PERIOD_DISPLAY);
 
     #if(DEBUG_FLAG)
@@ -120,7 +120,7 @@ int main(int argc, char* agv[]){
     if(val_ir == 0 && val_line != 0){
       //useconds_t has invalid behavior when becoming negative
       //set time remaining to 0 if decrement would make it negative
-      if(microsecRemaining <= PERIOD_DISPLAY)
+      if(*microsec_remaining <= PERIOD_DISPLAY)
         {microsecRemaining = 0; *microsec_remaining = 0;}
       else
         {microsecRemaining -= PERIOD_DISPLAY; *microsec_remaining -= PERIOD_DISPLAY;}
