@@ -42,11 +42,6 @@ int val_ir = -1;
 
 /* Global timer to stop program naturally */
 useconds_t  microsecRemaining = MICROSECONDS_UNTIL_TERMINATE;
-useconds_t* microsec_remaining = malloc(useconds_t);
-if(microsec_remaining == NULL){
-  printf("[!] malloc failed!\n");
-  return -1;
-}
 
 /* MAIN METHOD */
 int main(int argc, char* agv[]){
@@ -55,16 +50,21 @@ int main(int argc, char* agv[]){
   printf("Initializing...\n");
   if(gpioInitialise()<0){
     printf("[!] Initialization of pigpio failed! Aborting!\n");
-    free(microsec_remaining);
     return -1;
   }
 
   if( (gpioSetMode(PIN_SENSOR_LINE, PI_INPUT)<0) || 
       (gpioSetMode(PIN_SENSOR_IR, PI_INPUT)<0)){
     printf("[!] gpioSetMode failed! Aborting!\n");
-    free(microsec_remaining);
     return -1;
   }
+
+  useconds_t* microsec_remaining = malloc(sizeof(useconds_t));
+  if(microsec_remaining == NULL){
+    printf("[!] malloc failed!\n");
+    return -1;
+  }
+
 
   int* genericdata = malloc(sizeof(int));
   if(genericdata == NULL){
