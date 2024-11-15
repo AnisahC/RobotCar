@@ -37,8 +37,8 @@
 #define PERIOD_SCAN                    25000
 
 /* Globals for threads to update */
-int val_line = -1;
-int val_ir = -1;
+//int val_line = -1;
+//int val_ir = -1;
 
 /* Global timer to stop program naturally */
 useconds_t  microsecRemaining = MICROSECONDS_UNTIL_TERMINATE;
@@ -67,6 +67,65 @@ int main(int argc, char* agv[]){
   *microsec_remaining = MICROSECONDS_UNTIL_TERMINATE;
 
 
+  
+  // STEP 2: SPAWN THREADS
+  printf("Spawning threads...\n");
+
+  pthread_t thread_line,
+            thread_ir,
+            thread_generic;
+  //pthread_create(&thread_line,    NULL, t_sensor_line,NULL);
+  //pthread_create(&thread_ir,      NULL, t_sensor_ir,  NULL);
+
+  //Thread 1
+  int* val_ir = malloc(sizeof(int));
+  if(val_ir == NULL){
+    printf("[!] Malloc failed!\n");
+    free(microsec_remaining);
+    return -1;
+  }
+  *val_ir = 0;
+
+  sensor_data_t* genericstruct = malloc(sizeof(sensor_data_t));
+  if(genericstruct == NULL){
+    printf("[!] Malloc failed!\n");
+    free(microsec_remaining);
+    free(val_ir);
+    return -1;
+  }
+  genericstruct->data = val_ir;
+  genericstruct->pin  = PIN_SENSOR_IR;
+  genericstruct->time = microsec_remaining;
+
+  pthread_create(&thread_ir, NULL, th_sensor,    genericstruct);
+  genericstruct = NULL;//This will be freed by the thread, setting to NULL here for safety
+  /////////////
+
+  //Thread 2
+  int* val_line = malloc(sizeof(int));
+  if(val_line == NULL){
+    printf("[!] Malloc failed!\n");
+    free(microsec_remaining);
+    return -1;
+  }
+  *val_line = 0;
+
+  genericstruct = malloc(sizeof(sensor_data_t));
+  if(genericstruct == NULL){
+    printf("[!] Malloc failed!\n");
+    free(microsec_remaining);
+    free(val_line);
+    return -1;
+  }
+  genericstruct->data = val_line;
+  genericstruct->pin  = PIN_SENSOR_LINE;
+  genericstruct->time = microsec_remaining;
+
+  pthread_create(&thread_line, NULL, th_sensor,    genericstruct);
+  genericstruct = NULL;//This will be freed by the thread, setting to NULL here for safety
+  /////////////
+
+  //Thread 3
   int* genericdata = malloc(sizeof(int));
   if(genericdata == NULL){
     printf("[!] Malloc failed!\n");
@@ -75,7 +134,7 @@ int main(int argc, char* agv[]){
   }
   *genericdata = 0;
 
-  sensor_data_t* genericstruct = malloc(sizeof(sensor_data_t));
+  genericstruct = malloc(sizeof(sensor_data_t));
   if(genericstruct == NULL){
     printf("[!] Malloc failed!\n");
     free(microsec_remaining);
@@ -85,31 +144,25 @@ int main(int argc, char* agv[]){
   genericstruct->data = genericdata;
   genericstruct->pin  = PIN_SENSOR_IR;
   genericstruct->time = microsec_remaining;
-  // STEP 2: SPAWN THREADS
-  printf("Spawning threads...\n");
 
-  pthread_t thread_line,
-            thread_ir,
-            thread_generic;
-  pthread_create(&thread_line,    NULL, t_sensor_line,NULL);
-  pthread_create(&thread_ir,      NULL, t_sensor_ir,  NULL);
   pthread_create(&thread_generic, NULL, th_sensor,    genericstruct);
   genericstruct = NULL;//This will be freed by the thread, setting to NULL here for safety
+  /////////////
 
   //loop while time is not
   while(*microsec_remaining > 0){
     usleep(PERIOD_DISPLAY);
 
     #if(DEBUG_FLAG)
-    printf("IR: [%d]\nLine: [%d]\n", val_ir, val_line);
+    printf("IR: [%d]\nLine: [%d]\n", *val_ir, *val_line);
     #endif
 
     //Read out information as specified
-    if(val_line != 0)//Reversed
+    if(*val_line != 0)//Reversed
       {printf("ON THE LINE, ");}
     else
       {printf("OFF THE LINE, ");}
-    if(val_ir == 0)
+    if(*val_ir == 0)
       {printf("OBSTRUCTION DETECTED!\n");}
     else
       {printf("NO OBSTRUCTION.\n");}
@@ -117,7 +170,7 @@ int main(int argc, char* agv[]){
     printf("Generic Data! [%d]\n", *genericdata);
 
     //If both sensors pick up something, decrement time to naturally end program
-    if(val_ir == 0 && val_line != 0){
+    if(*val_ir == 0 && *val_line != 0){
       //useconds_t has invalid behavior when becoming negative
       //set time remaining to 0 if decrement would make it negative
       if(*microsec_remaining <= PERIOD_DISPLAY)
@@ -156,6 +209,10 @@ int main(int argc, char* agv[]){
 
   free(microsec_remaining);
   microsec_remaining = NULL;
+  free(val_ir);
+  val_ir = NULL;
+  free(val_line);
+  val_line = NULL;
   free(genericdata);
   genericdata = NULL;
 
@@ -164,6 +221,7 @@ int main(int argc, char* agv[]){
 }
 
 /* Thread Function Implementations */
+/*
 void* t_sensor_line(void* arg){
 
   while(microsecRemaining > 0){
@@ -191,3 +249,4 @@ void* t_sensor_ir(void* arg){
 
   return NULL;
 }
+*/
