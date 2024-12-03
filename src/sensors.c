@@ -41,7 +41,8 @@ void* th_sensor(void* arg){
   //Get pointer to timer
   useconds_t* time = ((sensor_data_t*) arg)->time;
 
-  //Free memory of parameter and set to null, NEVER USE AFTER THIS POINT
+
+  //FREE STRUCT
   free(arg);
   arg = NULL;
 
