@@ -33,7 +33,7 @@ void* th_sensor(void* arg){
   #if(DEBUG_FLAG)
   printf("t_sensor_line(%p)\n", arg);
   #endif
-  
+
   //Get pointer to field to mutate
   int* data = ((sensor_data_t*) arg)->data;
   //Get Pin number to read from
