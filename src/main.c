@@ -33,8 +33,8 @@ int init_echo  (pthread_t* t, double* dest, int pin_trigger, int pin_echo);
 
 #define PIN_SENSOR_IR   4
 #define PIN_SENSOR_LINE 17
-#define PIN_ECHO_TRIG   20
-#define PIN_ECHO_DIST   21
+#define PIN_ECHO_DIST   20
+#define PIN_ECHO_TRIG   21
 
 #define MICROSECONDS_UNTIL_TERMINATE 4000000
 #define PERIOD_DISPLAY                100000
@@ -117,6 +117,10 @@ int main(int argc, char* agv[]){
   }
   if(pthread_join(thread_ir, NULL) != 0){
     printf("[!] Error joining thread_ir!\n");
+    return -1;
+  }
+  if(pthread_join(thread_echo, NULL) != 0){
+    printf("[!] Error joining thread_echo!\n");
     return -1;
   }
 

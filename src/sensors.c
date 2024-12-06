@@ -110,20 +110,20 @@ void* th_echo(void* arg){
       }
       else if( !(gpioRead(pin_echo)) && (started_reading==1) ){
         time_end = clock();
-        started_reading = 0;
-      }
-
-      *data = (time_end - time_began) * ( (double) SOUND_METERS_PER_SECOND )/( (double) CLOCKS_PER_SEC * 2);
-
-      printf("Distance: [%f m]\n", *data);
-
-      //Take a break before updating distance
-      if(usleep(PERIOD_SCAN) != 0){
-        printf("[!] usleep failed!\n");
-        return NULL;
+        break;
       }
     }
+    clock_t time_elapsed = time_end - time_began;
 
+    *data = (time_elapsed) * ( (double) SOUND_METERS_PER_SECOND )/( (double) CLOCKS_PER_SEC * 2);
+
+    //printf("Distance: [%f m]\n", *data);
+
+    //Take a break before updating distance
+    if(usleep(PERIOD_SCAN) != 0){
+      printf("[!] usleep failed!\n");
+      return NULL;
+    }
   }
 
   #if(DEBUG_FLAG)
