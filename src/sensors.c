@@ -26,7 +26,7 @@
 /* Prototype Signatures for Sensors */
 #include "sensors.h"
 
-#define DEBUG_FLAG 0
+#define DEBUG_FLAG 1
 
 void* th_sensor(void* arg){
 
