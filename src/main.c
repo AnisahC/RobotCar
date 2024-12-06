@@ -38,19 +38,14 @@
 #define FORWARD 1
 #define BACKWARD 0
 
-/* MOTOR MANIPULATION */
-
-/** setMotorSpeed(...)
-*
-*   Sets a motor's speed and direction simultaneously
-*
-*   Any speed < 0,   is treated as speed=0
-*   Any speed > 100, is treated as speed=100
-*
-*   Returns -1 if any inputs are invalid
-*   Returns speed if successful
-*/
 // Function to set motor direction and speed
+#define PIN_SENSOR_LINE_R          17
+#define PIN_SENSOR_LINE_L          5
+#define PIN_SENSOR_LINE_M          22
+#define PIN_SENSOR_ECHO_F_TRIGGER  21
+#define PIN_SENSOR_ECHO_B_TRIGGER  24
+#define PIN_SENSOR_ECHO_F_ECHO     20
+#define PIN_SENSOR_ECHO_B_ECHO     23
 
 void setMotorDirectionSpeed(int motor, int direction, int speed)
 {
