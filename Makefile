@@ -2,10 +2,10 @@
 CC = gcc
 
 # Flags for Compiler
-CFLAGS = -Wall
+CFLAGS = -Wall -g -O2
 
 # Libraries
-LIBS = -lpthread -lpigpio 
+LIBS = -lpthread -lpigpio
 
 # Source C files
 SRC = src/main.c src/sensors.c

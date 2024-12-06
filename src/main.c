@@ -26,12 +26,15 @@
 
 /* Prototype Signatures for Sensors */
 #include "sensors.h"
-int init_sensor(pthread_t* t, int* des, int pin);
+int init_sensor(pthread_t* t, int*    dest, int pin);
+int init_echo  (pthread_t* t, double* dest, int pin_trigger, int pin_echo);
 
 #define DEBUG_FLAG 1
 
 #define PIN_SENSOR_IR   4
 #define PIN_SENSOR_LINE 17
+#define PIN_ECHO_DIST   20
+#define PIN_ECHO_TRIG   21
 
 #define MICROSECONDS_UNTIL_TERMINATE 4000000
 #define PERIOD_DISPLAY                100000
@@ -41,6 +44,7 @@ int init_sensor(pthread_t* t, int* des, int pin);
 useconds_t  	microsec_remaining = MICROSECONDS_UNTIL_TERMINATE;
 int             data_ir = -1;
 int             data_line = -1;
+double          data_dist = -1;
 
 /* MAIN METHOD */
 int main(int argc, char* agv[]){
@@ -63,10 +67,12 @@ int main(int argc, char* agv[]){
   printf("Spawning threads...\n");
 
   pthread_t thread_line,
-            thread_ir;
+            thread_ir,
+            thread_echo;
 
-  if( (init_sensor(&thread_ir,   &data_ir,   PIN_SENSOR_IR)   < 0) ||
-      (init_sensor(&thread_line, &data_line, PIN_SENSOR_LINE) < 0)){
+  if( (init_sensor(&thread_ir,   &data_ir,   PIN_SENSOR_IR)                < 0) ||
+      (init_sensor(&thread_line, &data_line, PIN_SENSOR_LINE)              < 0) ||
+      (init_echo  (&thread_echo, &data_dist, PIN_ECHO_TRIG,  PIN_ECHO_DIST)< 0) ){
 
      printf("[!] FAILED TO INITIALIZE SENSORS!\n");
      return -1;
@@ -85,6 +91,8 @@ int main(int argc, char* agv[]){
       {printf("OBSTRUCTION DETECTED!\n");}
     else
       {printf("NO OBSTRUCTION.\n");}
+
+    printf("DISTANCE: [%f m]\n", data_dist);
 
     //If both sensors pick up something, decrement time to naturally end program
     if(data_ir == 0 && data_line != 0){
@@ -111,6 +119,10 @@ int main(int argc, char* agv[]){
     printf("[!] Error joining thread_ir!\n");
     return -1;
   }
+  if(pthread_join(thread_echo, NULL) != 0){
+    printf("[!] Error joining thread_echo!\n");
+    return -1;
+  }
 
   gpioTerminate();
   return 0;
@@ -122,15 +134,37 @@ int main(int argc, char* agv[]){
 // "dest" is the address of the field being written to
 // "pin"  is the pin number being utilized
 int init_sensor(pthread_t* t, int* dest, int pin){
+  #if(DEBUG_FLAG)
   printf("init_sensor([%p], [%p], [%d])\n", t, dest, pin);
+  #endif
 
-  sensor_data_t* genericstruct = malloc(sizeof(sensor_data_t));
+  sensor_param_t* genericstruct = malloc(sizeof(sensor_param_t));
 
   genericstruct->data = dest;
   genericstruct->pin  = pin;
   genericstruct->time = &microsec_remaining;
 
   pthread_create(t, NULL, th_sensor, genericstruct);
+
+  //Struct will be freed by the thread above
+  genericstruct = NULL;
+
+  return 0; //Success
+}
+
+int init_echo(pthread_t* t, double* dest, int pin_trigger, int pin_echo){
+  #if(DEBUG_FLAG)
+  printf("init_sensor([%p], [%p], [%d], [%d])\n", t, dest, pin_trigger, pin_echo);
+  #endif
+
+  echo_param_t* genericstruct = malloc(sizeof(echo_param_t));
+
+  genericstruct->data        = dest;
+  genericstruct->pin_trigger = pin_trigger;
+  genericstruct->pin_echo    = pin_echo;
+  genericstruct->time        = &microsec_remaining;
+
+  pthread_create(t, NULL, th_echo, genericstruct);
 
   //Struct will be freed by the thread above
   genericstruct = NULL;
