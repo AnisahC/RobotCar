@@ -124,7 +124,7 @@ int main(int argc, char* agv[]){
 int init_sensor(pthread_t* t, int* dest, int pin){
   printf("init_sensor([%p], [%p], [%d])\n", t, dest, pin);
 
-  sensor_data_t* genericstruct = malloc(sizeof(sensor_data_t));
+  sensor_param_t* genericstruct = malloc(sizeof(sensor_param_t));
 
   genericstruct->data = dest;
   genericstruct->pin  = pin;
