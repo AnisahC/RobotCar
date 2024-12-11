@@ -1,13 +1,16 @@
 /**************************************************************
 * Class:: CSC-615-01 Fall 2024
 * Name:: Angelo Arriaga
-* Student ID:: 923069807
+         Citlalin Galvan
+         Owen Meyer
+         Austin Ng
+         Anisah Chowdhury
+* Student ID:: 923069807 922658318 9211270867 921461759 921677676
 * Github-Name:: DeadMartyr
-* Project:: Assignment 3 - Start Your Motors!
+* Project:: Group Project
 *
-* File:: A03_main.c
-* Description:: A demonstration of the manipulation of a Motor by
-* utilizing the pigpio library and the Motor Driver Hat
+* File:: motor.c
+* Description:: 
 **************************************************************/
 
 #include <pigpio.h>
