@@ -4,7 +4,7 @@ DIR_Config = lib/Config
 DIR_PCA9685 = lib/PCA9685
 DIR_TESTING = testing
 DIR_MAIN = ./
-DIR_SRC = Ăsrc
+DIR_SRC = src
 
 OBJ_C = $(wildcard ${DIR_LIB}/*.c ${DIR_SRC}/*.c ${DIR_Config}/*.c ${DIR_PCA9685}/*.c)
 OBJ_O = $(patsubst %.c,${DIR_BIN}/%.o,$(notdir ${OBJ_C}))
