@@ -4,7 +4,7 @@ DIR_Config = lib/Config
 DIR_PCA9685 = lib/PCA9685
 DIR_TESTING = testing
 DIR_MAIN = ./
-DIR_SRC = Ãsrc
+DIR_SRC = Ä‚src
 
 OBJ_C = $(wildcard ${DIR_LIB}/*.c ${DIR_SRC}/*.c ${DIR_Config}/*.c ${DIR_PCA9685}/*.c)
 OBJ_O = $(patsubst %.c,${DIR_BIN}/%.o,$(notdir ${OBJ_C}))
@@ -51,6 +51,15 @@ ${DIR_BIN}/%.o : $(DIR_Config)/%.c
 ${DIR_BIN}/%.o : $(DIR_PCA9685)/%.c
 	$(CC) $(CFLAGS) -c  $< -o $@ $(LIB) -I $(DIR_Config)
 
+build:
+	gcc -D USE_DEV_LIB  -c  lib/Config/DEV_Config.c -o bin/DEV_Config.o  -I lib/Config
+	gcc -D USE_DEV_LIB  -c  lib/Config/dev_hardware_SPI.c -o bin/dev_hardware_SPI.o  -I lib/Config
+	gcc -D USE_DEV_LIB  -c  lib/Config/dev_hardware_i2c.c -o bin/dev_hardware_i2c.o  -I lib/Config
+	gcc -D USE_DEV_LIB  -c  lib/Config/sysfs_gpio.c -o bin/sysfs_gpio.o  -I lib/Config
+	gcc -D USE_DEV_LIB  -c  lib/PCA9685/PCA9685.c -o bin/PCA9685.o  -I lib/Config
+	gcc -D USE_DEV_LIB  bin/DEV_Config.o bin/dev_hardware_SPI.o bin/dev_hardware_i2c.o bin/sysfs_gpio.o bin/PCA9685.o -o motor_control  -lm -lpigpio -lrt -lpthread
+	gcc -D USE_DEV_LIB -c src/sensors.c -o bin/sensors.o
+	gcc -D USE_DEV_LIB -c src/main.c -o bin/main.o -lpthread -lpigpio -lrt -I lib/Config -I lib/PCA9685/
 
 clean:
 	rm $(DIR_BIN)/*.* 
