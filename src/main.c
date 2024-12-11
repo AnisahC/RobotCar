@@ -42,6 +42,8 @@ int init_echo  (pthread_t* t, double* dest, int pin_trigger, int pin_echo);
 #define PIN_SENSOR_ECHO_F_ECHO     20
 #define PIN_SENSOR_ECHO_B_ECHO     23
 
+#define PIN_BUTTON                 18
+
 #define MICROSECONDS_UNTIL_TERMINATE 4000000
 #define PERIOD_DISPLAY                100000
 #define PERIOD_SCAN                    25000
@@ -80,7 +82,8 @@ int main(int argc, char* agv[]){
 
   if( (gpioSetMode(PIN_SENSOR_LINE_L, PI_INPUT) < 0) ||
       (gpioSetMode(PIN_SENSOR_LINE_R, PI_INPUT) < 0) ||
-      (gpioSetMode(PIN_SENSOR_LINE_M, PI_INPUT) < 0)  ){
+      (gpioSetMode(PIN_SENSOR_LINE_M, PI_INPUT) < 0) ||
+      (gpioSetMode(PIN_BUTTON, PI_INPUT) < 0)){
     printf("[!] gpioSetMode failed! Aborting!\n");
     return -1;
   }
@@ -104,7 +107,14 @@ int main(int argc, char* agv[]){
      printf("[!] FAILED TO INITIALIZE SENSORS!\n");
      return -1;
   }
-
+  while(gpioRead(BUTTON) != PI_BAD_GPIO){
+    //printf("level: %d\n",gpioRead(BUTTON));
+    if(gpioRead(BUTTON) > PI_LOW){
+      printf("Button Pressed\n");
+      break;
+    }
+    gpioDelay(20000);
+  }
   //loop while time is not
   while(looping){//off line
     if (signal(SIGTSTP,handleStop) == SIG_ERR){
