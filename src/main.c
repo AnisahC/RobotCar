@@ -120,11 +120,13 @@ int main(int argc, char* agv[]){
   //loop while time is not
   while(looping){//off line
     if (signal(SIGTSTP,handleStop) == SIG_ERR){
+      looping = 0;
       break;
     }
 
     if(gpioRead(PIN_BUTTON) > PI_LOW){
       printf("[TERMINATE] Button Pressed\n");
+      looping = 0;
       break;
     }
 
