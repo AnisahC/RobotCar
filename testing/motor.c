@@ -193,7 +193,7 @@ int main(int argc, char* agv[]){
 
       if (left_line_value == 1) {
         while(mid_line_value != 1) {
-         printf("turning left");
+         printf("turning left...\n");
          turnMotor(TURN_LEFT);
          }
       }

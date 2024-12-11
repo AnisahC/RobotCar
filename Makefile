@@ -1,13 +1,12 @@
-DIR_OBJ = ./lib
-DIR_BIN = ./bin
-DIR_Config = ./lib/Config
-DIR_MotorDriver = ./lib/MotorDriver
-DIR_PCA9685 = ./lib/PCA9685
-DIR_TESTING = ./testing
+DIR_LIB = lib
+DIR_BIN = bin
+DIR_Config = lib/Config
+DIR_PCA9685 = lib/PCA9685
+DIR_TESTING = testing
 DIR_MAIN = ./
-DIR_SRC = ./src
+DIR_SRC = Ãsrc
 
-OBJ_C = $(wildcard ${DIR_OBJ}/*.c ${DIR_TESTING}/*.c ${DIR_Config}/*.c ${DIR_MotorDriver}/*.c ${DIR_PCA9685}/*.c)
+OBJ_C = $(wildcard ${DIR_LIB}/*.c ${DIR_SRC}/*.c ${DIR_Config}/*.c ${DIR_PCA9685}/*.c)
 OBJ_O = $(patsubst %.c,${DIR_BIN}/%.o,$(notdir ${OBJ_C}))
 
 TARGET = motor_control
@@ -32,24 +31,18 @@ endif
 ${TARGET}:${OBJ_O}
 	$(CC) $(CFLAGS) $(OBJ_O) -o $@ $(LIB) -lm -lpigpio -lrt -lpthread
 
-${DIR_BIN}/%.o : $(DIR_TESTING)/%.c
-	$(CC) $(CFLAGS) -c  $< -o $@ $(LIB) -lpigpio -lrt -lpthread -I $(DIR_OBJ) -I $(DIR_Config) -I $(DIR_MotorDriver) -I $(DIR_PCA9685)
 
-#${DIR_BIN}/%.o : $(DIR_MAIN)/%.c
-#	$(CC) $(CFLAGS) -c  $< -o $@ $(LIB) -I $(DIR_OBJ) -I $(DIR_Config) -I $(DIR_MotorDriver) -I $(DIR_PCA9685)
-
-${DIR_BIN}/%.o : $(DIR_OBJ)/%.c
-	$(CC) $(CFLAGS) -c  $< -o $@ $(LIB) -I $(DIR_Config)
+${DIR_BIN}/%.o : $(DIR_LIB)/%.c
+	$(CC) $(CFLAGS) -c  $< -o $@ $(LIB) -I $(DIR_Config) -I $(DIR_OBJ) -I $(DIR_PCA9685)
 
 ${DIR_BIN}/%.o : $(DIR_Config)/%.c
-	$(CC) $(CFLAGS) -c  $< -o $@ $(LIB)
-
+	$(CC) $(CFLAGS) -c  $< -o $@ $(LIB) -I $(DIR_Config)
 
 ${DIR_BIN}/%.o : $(DIR_PCA9685)/%.c
 	$(CC) $(CFLAGS) -c  $< -o $@ $(LIB) -I $(DIR_Config)
 
-${DIR_BIN}/%.o : $(DIR_MotorDriver)/%.c
-	$(CC) $(CFLAGS) -c  $< -o $@ $(LIB) -I $(DIR_Config) -I $(DIR_PCA9685)
+${DIR_BIN}/%.o : $(DIR_SRC)/%.c
+	$(CC) $(CFLAGS) -c  $< -o $@ $(LIB) -lpigpio -lrt -lpthread -I $(DIR_LIB) -I $(DIR_Config)  -I $(DIR_PCA9685)
 
 
 clean :

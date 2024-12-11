@@ -15,10 +15,6 @@
  *
  * *************/
 
-#include "../lib/PCA9685/PCA9685.h"       
-#include "../lib/Config/sysfs_gpio.h"     
-#include "../lib/Config/DEV_Config.h"     
-#include "../lib/Config/Debug.h"          
 #include <pigpio.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -31,6 +27,9 @@
 #include "sensors.h"
 int init_sensor(pthread_t* t, int*    dest, int pin);
 int init_echo  (pthread_t* t, double* dest, int pin_trigger, int pin_echo);
+
+#include "PCA9685.h"
+
 
 #define DEBUG_FLAG 1
 
