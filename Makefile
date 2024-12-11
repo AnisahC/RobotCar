@@ -28,9 +28,19 @@ else ifeq ($(USELIB), USE_WIRINGPI_LIB)
 
 endif
 
+
+
 ${TARGET}:${OBJ_O}
 	$(CC) $(CFLAGS) $(OBJ_O) -o $@ $(LIB) -lm -lpigpio -lrt -lpthread
 
+${DIR_BIN}/%.o:${DIR_SRC}/%.c
+	$(CC) $(CFLAGS) -c  $< -o $@ $(LIB) -lpigpio -lrt -lpthread -I $(DIR_LIB) -I $(DIR_Config)  -I $(DIR_PCA9685)
+
+bin/main.o : src/main.c
+	$(CC) $(CFLAGS) -c  $< -o $@ $(LIB) -lpigpio -lrt -lpthread -I $(DIR_LIB) -I $(DIR_Config)  -I $(DIR_PCA9685)
+
+bin/sensors.o : src/sensors.c
+	$(CC) $(CFLAGS) -c  $< -o $@ $(LIB) -lpigpio -lrt -lpthread -I $(DIR_LIB) -I $(DIR_Config)  -I $(DIR_PCA9685)
 
 ${DIR_BIN}/%.o : $(DIR_LIB)/%.c
 	$(CC) $(CFLAGS) -c  $< -o $@ $(LIB) -I $(DIR_Config) -I $(DIR_OBJ) -I $(DIR_PCA9685)
@@ -41,10 +51,7 @@ ${DIR_BIN}/%.o : $(DIR_Config)/%.c
 ${DIR_BIN}/%.o : $(DIR_PCA9685)/%.c
 	$(CC) $(CFLAGS) -c  $< -o $@ $(LIB) -I $(DIR_Config)
 
-${DIR_BIN}/%.o : $(DIR_SRC)/%.c
-	$(CC) $(CFLAGS) -c  $< -o $@ $(LIB) -lpigpio -lrt -lpthread -I $(DIR_LIB) -I $(DIR_Config)  -I $(DIR_PCA9685)
 
-
-clean :
+clean:
 	rm $(DIR_BIN)/*.* 
 	rm $(TARGET) 

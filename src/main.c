@@ -22,6 +22,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <signal.h>
 
 /* Prototype Signatures for Sensors */
 #include "sensors.h"
@@ -111,7 +112,7 @@ int main(int argc, char* agv[]){
     }
 
     if(turning){
-      if ((found_obstacle != 1) && (data_echoB*100 > MIN_DISTANCE) && data_echoB*100 < MAX_DISTANCE)){
+      if ((found_obstacle != 1) && (data_echoB*100 > MIN_DISTANCE) && data_echoB*100 < MAX_DISTANCE){
         found_obstacle = 1;
       }
       if(found_obstacle != 1){
@@ -150,20 +151,28 @@ int main(int argc, char* agv[]){
   // STEP 3: TERMINATE
   printf("Terminating program...\n");
 
-  if(pthread_join(thread_line, NULL) != 0){
-    printf("[!] Error joining thread_line!\n");
+  if(pthread_join(thread_lineL, NULL) != 0){
+    printf("[!] Error joining thread_lineL!\n");
     return -1;
   }
-  if(pthread_join(thread_ir, NULL) != 0){
-    printf("[!] Error joining thread_ir!\n");
+  if(pthread_join(thread_lineM, NULL) != 0){
+    printf("[!] Error joining thread_lineM!\n");
     return -1;
   }
-  if(pthread_join(thread_echo, NULL) != 0){
-    printf("[!] Error joining thread_echo!\n");
+  if(pthread_join(thread_lineR, NULL) != 0){
+    printf("[!] Error joining thread_lineR!\n");
+    return -1;
+  }
+  if(pthread_join(thread_echoF, NULL) != 0){
+    printf("[!] Error joining thread_echoF!\n");
+    return -1;
+  }
+  if(pthread_join(thread_echoB, NULL) != 0){
+    printf("[!] Error joining thread_echoB!\n");
     return -1;
   }
 
-  gpioTerminate();
+gpioTerminate();
   return 0;
 }
 
