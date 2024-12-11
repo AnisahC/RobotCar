@@ -34,20 +34,39 @@ int init_echo  (pthread_t* t, double* dest, int pin_trigger, int pin_echo);
 
 #define DEBUG_FLAG 1
 
-#define PIN_SENSOR_IR   4
-#define PIN_SENSOR_LINE 17
-#define PIN_ECHO_DIST   20
-#define PIN_ECHO_TRIG   21
+#define PIN_SENSOR_LINE_R          17
+#define PIN_SENSOR_LINE_L          5
+#define PIN_SENSOR_LINE_M          22
+#define PIN_SENSOR_ECHO_F_TRIGGER  21
+#define PIN_SENSOR_ECHO_B_TRIGGER  24
+#define PIN_SENSOR_ECHO_F_ECHO     20
+#define PIN_SENSOR_ECHO_B_ECHO     23
 
 #define MICROSECONDS_UNTIL_TERMINATE 4000000
 #define PERIOD_DISPLAY                100000
 #define PERIOD_SCAN                    25000
 
+//ECHO sensor
+#define MAX_DISTANCE 200
+#define MIN_DISTANCE 2
+
 /* Global variables for threads to utilize */
 useconds_t  	microsec_remaining = MICROSECONDS_UNTIL_TERMINATE;
-int             data_ir = -1;
-int             data_line = -1;
-double          data_dist = -1;
+int             data_lineR = -1;
+int             data_lineL = -1;
+int             data_lineM = -1;
+
+double          data_echoF = -1;
+double          data_echoB = -1;
+
+int turning = 0;
+int looping = 1;
+int found_obstacle = 0;
+
+void handleStop(int signal){
+    printf("Stopped Loop\n");
+    looping = 0;
+}
 
 /* MAIN METHOD */
 int main(int argc, char* agv[]){
@@ -59,8 +78,9 @@ int main(int argc, char* agv[]){
     return -1;
   }
 
-  if( (gpioSetMode(PIN_SENSOR_LINE, PI_INPUT) < 0) ||
-      (gpioSetMode(PIN_SENSOR_IR, PI_INPUT)   < 0)){
+  if( (gpioSetMode(PIN_SENSOR_LINE_L, PI_INPUT) < 0) ||
+      (gpioSetMode(PIN_SENSOR_LINE_R, PI_INPUT) < 0) ||
+      (gpioSetMode(PIN_SENSOR_LINE_M, PI_INPUT) < 0)  ){
     printf("[!] gpioSetMode failed! Aborting!\n");
     return -1;
   }
@@ -69,46 +89,63 @@ int main(int argc, char* agv[]){
   // STEP 2: SPAWN THREADS
   printf("Spawning threads...\n");
 
-  pthread_t thread_line,
-            thread_ir,
-            thread_echo;
+  pthread_t thread_lineR,
+            thread_lineL,
+            thread_lineM,
+            thread_echoF,
+            thread_echoB;
 
-  if( (init_sensor(&thread_ir,   &data_ir,   PIN_SENSOR_IR)                < 0) ||
-      (init_sensor(&thread_line, &data_line, PIN_SENSOR_LINE)              < 0) ||
-      (init_echo  (&thread_echo, &data_dist, PIN_ECHO_TRIG,  PIN_ECHO_DIST)< 0) ){
+  if( (init_sensor(&thread_lineL, &data_lineL, PIN_SENSOR_LINE_L) < 0) ||
+      (init_sensor(&thread_lineR, &data_lineR, PIN_SENSOR_LINE_R) < 0) ||
+      (init_sensor(&thread_lineM, &data_lineM, PIN_SENSOR_LINE_M) < 0) ||
+      (init_echo  (&thread_echoF, &data_echoF, PIN_SENSOR_ECHO_F_TRIGGER,  PIN_SENSOR_ECHO_F_ECHO) < 0) ||
+      (init_echo  (&thread_echoB, &data_echoB, PIN_SENSOR_ECHO_B_TRIGGER,  PIN_SENSOR_ECHO_B_ECHO) < 0)){
 
      printf("[!] FAILED TO INITIALIZE SENSORS!\n");
      return -1;
   }
 
   //loop while time is not
-  while(microsec_remaining > 0){
-    usleep(PERIOD_DISPLAY);
-
-    //Read out information as specified
-    if(data_line != 0)//Reversed
-      {printf("ON THE LINE, ");}
-    else
-      {printf("OFF THE LINE, ");}
-    if(data_ir == 0)
-      {printf("OBSTRUCTION DETECTED!\n");}
-    else
-      {printf("NO OBSTRUCTION.\n");}
-
-    printf("DISTANCE: [%f m]\n", data_dist);
-
-    //If both sensors pick up something, decrement time to naturally end program
-    if(data_ir == 0 && data_line != 0){
-      //useconds_t has invalid behavior when becoming negative
-      //set time remaining to 0 if decrement would make it negative
-      if(microsec_remaining <= PERIOD_DISPLAY)
-        {microsec_remaining = 0;}
-      else
-        {microsec_remaining -= PERIOD_DISPLAY;}
-      #if(DEBUG_FLAG)
-      printf("main microsec_remaining: [%d]\n", microsec_remaining);
-      #endif
+  while(looping){//off line
+    if (signal(SIGTSTP,handleStop) == SIG_ERR){
+      break;
     }
+
+    if(turning){
+      if ((found_obstacle != 1) && (data_echoB*100 > MIN_DISTANCE) && data_echoB*100 < MAX_DISTANCE)){
+        found_obstacle = 1;
+      }
+      if(found_obstacle != 1){
+        printf("Continue 0 point turn\n");
+        continue;
+      }
+      if (found_obstacle && ((data_echoB*100 < MIN_DISTANCE) && data_echoB*100 > MAX_DISTANCE)){
+        printf("[ECHO] past obstacle, go straight \n");
+        turning = 0;
+        found_obstacle = 0;
+        continue;
+      }
+      if(data_lineM != 0){
+        printf("found line while turning, turn opposite of sensor side\n");
+      }
+    }else{//on line
+      if (data_echoF > 100){
+        printf("[ECHO] obstacle detected %f\n",data_echoF);
+        turning = 1;
+        continue;
+      }
+      if(data_lineM != 0){
+        printf("continue forward\n");
+        continue;
+      }
+      if(data_lineR != 0){
+        printf("right sensor, turn left\n");
+      }
+      if(data_lineL != 0){
+        printf("left sensor, turn right\n");
+      }
+    }
+    gpioDelay(100000);
   }
 
   // STEP 3: TERMINATE
