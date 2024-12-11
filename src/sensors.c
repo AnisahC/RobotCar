@@ -131,3 +131,44 @@ void* th_echo(void* arg){
   #endif
   return NULL;
 }
+
+void* th_button(void* arg){
+
+  #if(DEBUG_FLAG)
+  printf("th_button(%p) START\n", arg);
+  #endif
+
+  //Extract information from passed struct
+  char* data         = ((button_param_t*) arg)->data;
+  int   pin          = ((button_param_t*) arg)->data;
+  char  inital_state = ((button_param_t*) arg)->data;
+
+  //FREE STRUCT
+  free(arg);
+  arg = NULL;
+
+  //Init Pin Modes
+  if(gpioSetMode(pin, MODE_IN)){
+    printf("[!] Failed to set pin modes!\n");
+    return NULL;
+  }
+
+  //Loop until data is no longer the initial value
+  while(*data == initial_state){
+
+    if(gpioRead(pin)){
+       *data = !initial_state;
+    }
+
+    if(usleep(PERIOD_SCAN) != 0){
+       printf("[!] usleep failed!\n");
+       return NULL;
+    }
+  }
+
+
+  #if(DEBUG_FLAG)
+  printf("th_echo(%p) TERMINATE\n", arg);
+  #endif
+  return NULL;
+}
