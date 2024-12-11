@@ -107,17 +107,24 @@ int main(int argc, char* agv[]){
      printf("[!] FAILED TO INITIALIZE SENSORS!\n");
      return -1;
   }
-  while(gpioRead(BUTTON) != PI_BAD_GPIO){
-    //printf("level: %d\n",gpioRead(BUTTON));
-    if(gpioRead(BUTTON) > PI_LOW){
-      printf("Button Pressed\n");
+  while(gpioRead(PIN_BUTTON) != PI_BAD_GPIO){
+    printf("level: %d\n",gpioRead(PIN_BUTTON));
+    if(gpioRead(PIN_BUTTON) > PI_LOW){
+      printf("[START] Button Pressed\n");
       break;
     }
     gpioDelay(20000);
   }
+
+  gpioDelay(20000);
   //loop while time is not
   while(looping){//off line
     if (signal(SIGTSTP,handleStop) == SIG_ERR){
+      break;
+    }
+
+    if(gpioRead(PIN_BUTTON) > PI_LOW){
+      printf("[TERMINATE] Button Pressed\n");
       break;
     }
 
