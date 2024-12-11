@@ -25,112 +25,152 @@
 #include <time.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <pthread.h>
 
-#define PWM_LEFT             PCA_CHANNEL_5
-#define PWM_LEFT_FORWARD     PCA_CHANNEL_3
-#define PWM_LEFT_BACKWARD    PCA_CHANNEL_4
-#define PWM_RIGHT            PCA_CHANNEL_0
-#define PWM_RIGHT_FORWARD    PCA_CHANNEL_1
-#define PWM_RIGHT_BACKWARD   PCA_CHANNEL_2
- 
-#define LEFT  0
-#define RIGHT 1
-#define FORWARD 1
-#define BACKWARD 0
+/* Prototype Signatures for Sensors */
+#include "sensors.h"
+int init_sensor(pthread_t* t, int*    dest, int pin);
+int init_echo  (pthread_t* t, double* dest, int pin_trigger, int pin_echo);
 
-// Function to set motor direction and speed
-#define PIN_SENSOR_LINE_R          17
-#define PIN_SENSOR_LINE_L          5
-#define PIN_SENSOR_LINE_M          22
-#define PIN_SENSOR_ECHO_F_TRIGGER  21
-#define PIN_SENSOR_ECHO_B_TRIGGER  24
-#define PIN_SENSOR_ECHO_F_ECHO     20
-#define PIN_SENSOR_ECHO_B_ECHO     23
+#define DEBUG_FLAG 1
 
-void setMotorDirectionSpeed(int motor, int direction, int speed)
-{
-    // Print the inputs for debugging
-    printf("Motor: %d, Direction: %d, Speed: %d\n", motor, direction, speed);
+#define PIN_SENSOR_IR   4
+#define PIN_SENSOR_LINE 17
+#define PIN_ECHO_DIST   20
+#define PIN_ECHO_TRIG   21
 
-    if (motor == LEFT) {
-        PCA9685_SetLevel(PWM_LEFT, speed); // Set speed for left motor
-        if (direction == FORWARD) {
-            PCA9685_SetLevel(PWM_LEFT_FORWARD, 4095);  // Set forward direction (full speed)
-            PCA9685_SetLevel(PWM_LEFT_BACKWARD, 0);    // Ensure backward is off
-        } else if (direction == BACKWARD) {
-            PCA9685_SetLevel(PWM_LEFT_BACKWARD, 4095); // Set backward direction (full speed)
-            PCA9685_SetLevel(PWM_LEFT_FORWARD, 0);     // Ensure forward is off
-        }
-    } 
-    else if (motor == RIGHT) {
-        PCA9685_SetLevel(PWM_RIGHT, speed); // Set speed for right motor
-        if (direction == FORWARD) {
-            PCA9685_SetLevel(PWM_RIGHT_FORWARD, 4095); // Set forward direction (full speed)
-            PCA9685_SetLevel(PWM_RIGHT_BACKWARD, 0);   // Ensure backward is off
-        } else if (direction == BACKWARD) {
-            PCA9685_SetLevel(PWM_RIGHT_BACKWARD, 4095); // Set backward direction (full speed)
-            PCA9685_SetLevel(PWM_RIGHT_FORWARD, 0);     // Ensure forward is off
-        }
+#define MICROSECONDS_UNTIL_TERMINATE 4000000
+#define PERIOD_DISPLAY                100000
+#define PERIOD_SCAN                    25000
+
+/* Global variables for threads to utilize */
+useconds_t  	microsec_remaining = MICROSECONDS_UNTIL_TERMINATE;
+int             data_ir = -1;
+int             data_line = -1;
+double          data_dist = -1;
+
+/* MAIN METHOD */
+int main(int argc, char* agv[]){
+
+  // STEP 1: INITIALIZE
+  printf("Initializing...\n");
+  if(gpioInitialise()<0){
+    printf("[!] Initialization of pigpio failed! Aborting!\n");
+    return -1;
+  }
+
+  if( (gpioSetMode(PIN_SENSOR_LINE, PI_INPUT) < 0) ||
+      (gpioSetMode(PIN_SENSOR_IR, PI_INPUT)   < 0)){
+    printf("[!] gpioSetMode failed! Aborting!\n");
+    return -1;
+  }
+
+
+  // STEP 2: SPAWN THREADS
+  printf("Spawning threads...\n");
+
+  pthread_t thread_line,
+            thread_ir,
+            thread_echo;
+
+  if( (init_sensor(&thread_ir,   &data_ir,   PIN_SENSOR_IR)                < 0) ||
+      (init_sensor(&thread_line, &data_line, PIN_SENSOR_LINE)              < 0) ||
+      (init_echo  (&thread_echo, &data_dist, PIN_ECHO_TRIG,  PIN_ECHO_DIST)< 0) ){
+
+     printf("[!] FAILED TO INITIALIZE SENSORS!\n");
+     return -1;
+  }
+
+  //loop while time is not
+  while(microsec_remaining > 0){
+    usleep(PERIOD_DISPLAY);
+
+    //Read out information as specified
+    if(data_line != 0)//Reversed
+      {printf("ON THE LINE, ");}
+    else
+      {printf("OFF THE LINE, ");}
+    if(data_ir == 0)
+      {printf("OBSTRUCTION DETECTED!\n");}
+    else
+      {printf("NO OBSTRUCTION.\n");}
+
+    printf("DISTANCE: [%f m]\n", data_dist);
+
+    //If both sensors pick up something, decrement time to naturally end program
+    if(data_ir == 0 && data_line != 0){
+      //useconds_t has invalid behavior when becoming negative
+      //set time remaining to 0 if decrement would make it negative
+      if(microsec_remaining <= PERIOD_DISPLAY)
+        {microsec_remaining = 0;}
+      else
+        {microsec_remaining -= PERIOD_DISPLAY;}
+      #if(DEBUG_FLAG)
+      printf("main microsec_remaining: [%d]\n", microsec_remaining);
+      #endif
     }
+  }
+
+  // STEP 3: TERMINATE
+  printf("Terminating program...\n");
+
+  if(pthread_join(thread_line, NULL) != 0){
+    printf("[!] Error joining thread_line!\n");
+    return -1;
+  }
+  if(pthread_join(thread_ir, NULL) != 0){
+    printf("[!] Error joining thread_ir!\n");
+    return -1;
+  }
+  if(pthread_join(thread_echo, NULL) != 0){
+    printf("[!] Error joining thread_echo!\n");
+    return -1;
+  }
+
+  gpioTerminate();
+  return 0;
 }
 
-int main() {
-    // Initialize PCA9685 with I2C address 0x40
-    int init_status = PCA9685_Init(0x40);
-    
-    // Check if initialization was successful
-    if (init_status != 0) {
-        printf("Initialization failed. Exiting...\n");
-        return -1;  // Exit with an error code
-    } else {
-        printf("PCA9685 successfully initialized.\n");
-    }
+/* Thread Function Implementations */
 
-    
-    // Run both motors forward at speed 100
-    printf("Running both motors forward at speed 100\n");
-    setMotorDirectionSpeed(LEFT, FORWARD, 100);  // Left motor forward at speed 100
-    setMotorDirectionSpeed(RIGHT, FORWARD, 100); // Right motor forward at speed 100
-    
-    // Wait for some time (e.g., 2 seconds)
-    sleep(2);
+//Initialize our sensor threads
+// "dest" is the address of the field being written to
+// "pin"  is the pin number being utilized
+int init_sensor(pthread_t* t, int* dest, int pin){
+  #if(DEBUG_FLAG)
+  printf("init_sensor([%p], [%p], [%d])\n", t, dest, pin);
+  #endif
 
-    // Make only the left motor run forward at speed 100
-    printf("Running left motor forward at speed 100\n");
-    setMotorDirectionSpeed(LEFT, FORWARD, 100);  // Left motor forward
-    setMotorDirectionSpeed(RIGHT, BACKWARD, 0);  // Stop right motor
-    
-    // Wait for some time (e.g., 2 seconds)
-    DEV_Delay_ms(2000);
+  sensor_param_t* genericstruct = malloc(sizeof(sensor_param_t));
 
-    // Make only the left motor run backward at speed 100
-    printf("Running left motor backward at speed 100\n");
-    setMotorDirectionSpeed(LEFT, BACKWARD, 100); // Left motor backward
-    setMotorDirectionSpeed(RIGHT, BACKWARD, 0);  // Stop right motor
-    
-    // Wait for some time (e.g., 2 seconds)
-    sleep(2);
+  genericstruct->data = dest;
+  genericstruct->pin  = pin;
+  genericstruct->time = &microsec_remaining;
 
-    // Make only the right motor run forward at speed 100
-    printf("Running right motor forward at speed 100\n");
-    setMotorDirectionSpeed(LEFT, BACKWARD, 0);  // Stop left motor
-    setMotorDirectionSpeed(RIGHT, FORWARD, 100); // Right motor forward
-    
-    // Wait for some time (e.g., 2 seconds)
-    sleep(2);
+  pthread_create(t, NULL, th_sensor, genericstruct);
 
-    // Make only the right motor run backward at speed 100
-    printf("Running right motor backward at speed 100\n");
-    setMotorDirectionSpeed(LEFT, BACKWARD, 0);  // Stop left motor
-    setMotorDirectionSpeed(RIGHT, BACKWARD, 100); // Right motor backward
-    
-    // Wait for some time (e.g., 2 seconds)
-    sleep(2);
+  //Struct will be freed by the thread above
+  genericstruct = NULL;
 
-    // Stop both motors
-    printf("Stopping both motors\n");
-    setMotorDirectionSpeed(LEFT, BACKWARD, 0);  // Stop left motor
-    setMotorDirectionSpeed(RIGHT, BACKWARD, 0); // Stop right motor
+  return 0; //Success
+}
 
-    return 0;
+int init_echo(pthread_t* t, double* dest, int pin_trigger, int pin_echo){
+  #if(DEBUG_FLAG)
+  printf("init_sensor([%p], [%p], [%d], [%d])\n", t, dest, pin_trigger, pin_echo);
+  #endif
+
+  echo_param_t* genericstruct = malloc(sizeof(echo_param_t));
+
+  genericstruct->data        = dest;
+  genericstruct->pin_trigger = pin_trigger;
+  genericstruct->pin_echo    = pin_echo;
+  genericstruct->time        = &microsec_remaining;
+
+  pthread_create(t, NULL, th_echo, genericstruct);
+
+  //Struct will be freed by the thread above
+  genericstruct = NULL;
+
+  return 0; //Success
 }

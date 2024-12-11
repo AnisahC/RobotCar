@@ -44,6 +44,7 @@ ${DIR_BIN}/%.o : $(DIR_OBJ)/%.c
 ${DIR_BIN}/%.o : $(DIR_Config)/%.c
 	$(CC) $(CFLAGS) -c  $< -o $@ $(LIB)
 
+
 ${DIR_BIN}/%.o : $(DIR_PCA9685)/%.c
 	$(CC) $(CFLAGS) -c  $< -o $@ $(LIB) -I $(DIR_Config)
 
