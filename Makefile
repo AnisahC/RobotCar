@@ -1,22 +1,57 @@
-# C Compiler (Try zig's maybe?)
+DIR_OBJ = ./lib
+DIR_BIN = ./bin
+DIR_Config = ./lib/Config
+DIR_MotorDriver = ./lib/MotorDriver
+DIR_PCA9685 = ./lib/PCA9685
+DIR_TESTING = ./testing
+DIR_MAIN = ./
+DIR_SRC = ./src
+
+OBJ_C = $(wildcard ${DIR_OBJ}/*.c ${DIR_TESTING}/*.c ${DIR_Config}/*.c ${DIR_MotorDriver}/*.c ${DIR_PCA9685}/*.c)
+OBJ_O = $(patsubst %.c,${DIR_BIN}/%.o,$(notdir ${OBJ_C}))
+
+TARGET = motor_control
+#BIN_TARGET = ${DIR_BIN}/${TARGET}
+
 CC = gcc
 
-# Flags for Compiler
-CFLAGS = -Wall -g -O2
+DEBUG = -g -O0 -Wall
+CFLAGS += $(DEBUG)
 
-# Libraries
-LIBS = -lpthread -lpigpio
+# USELIB = USE_BCM2835_LIB
+# USELIB = USE_WIRINGPI_LIB
+USELIB = USE_DEV_LIB
+DEBUG = -D $(USELIB) 
+ifeq ($(USELIB), USE_BCM2835_LIB)
+    LIB = -lbcm2835 -lm 
+else ifeq ($(USELIB), USE_WIRINGPI_LIB)
+    LIB = -lwiringPi -lm 
 
-# Source C files
-SRC = src/main.c src/sensors.c
+endif
 
-# Output (per specification)
-OUT = followLine
+${TARGET}:${OBJ_O}
+	$(CC) $(CFLAGS) $(OBJ_O) -o $@ $(LIB) -lm -lpigpio -lrt -lpthread
 
-# BUILD
-$(OUT): $(SRC)
-	$(CC) $(CFLAGS) -o $(OUT) $(SRC) $(LIBS)
+${DIR_BIN}/%.o : $(DIR_TESTING)/%.c
+	$(CC) $(CFLAGS) -c  $< -o $@ $(LIB) -lpigpio -lrt -lpthread -I $(DIR_OBJ) -I $(DIR_Config) -I $(DIR_MotorDriver) -I $(DIR_PCA9685)
 
-# CLEAN OUTPUT
-clean:
-	rm -f $(OUT)
+#${DIR_BIN}/%.o : $(DIR_MAIN)/%.c
+#	$(CC) $(CFLAGS) -c  $< -o $@ $(LIB) -I $(DIR_OBJ) -I $(DIR_Config) -I $(DIR_MotorDriver) -I $(DIR_PCA9685)
+
+${DIR_BIN}/%.o : $(DIR_OBJ)/%.c
+	$(CC) $(CFLAGS) -c  $< -o $@ $(LIB) -I $(DIR_Config)
+
+${DIR_BIN}/%.o : $(DIR_Config)/%.c
+	$(CC) $(CFLAGS) -c  $< -o $@ $(LIB)
+
+
+${DIR_BIN}/%.o : $(DIR_PCA9685)/%.c
+	$(CC) $(CFLAGS) -c  $< -o $@ $(LIB) -I $(DIR_Config)
+
+${DIR_BIN}/%.o : $(DIR_MotorDriver)/%.c
+	$(CC) $(CFLAGS) -c  $< -o $@ $(LIB) -I $(DIR_Config) -I $(DIR_PCA9685)
+
+
+clean :
+	rm $(DIR_BIN)/*.* 
+	rm $(TARGET) 

@@ -15,7 +15,10 @@
  *
  * *************/
 
-
+#include "../lib/PCA9685/PCA9685.h"       
+#include "../lib/Config/sysfs_gpio.h"     
+#include "../lib/Config/DEV_Config.h"     
+#include "../lib/Config/Debug.h"          
 #include <pigpio.h>
 #include <stdio.h>
 #include <unistd.h>
