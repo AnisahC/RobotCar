@@ -178,7 +178,7 @@ int stopMotor(){
   PCA9685_SetPwmDutyCycle(LEFT, 0);
   PCA9685_SetPwmDutyCycle(RIGHT, 0);
 
-  eturn 0;
+  return 0;
 }
 
 
@@ -225,7 +225,7 @@ int main(int argc, char* agv[]){
     printf("level: %d\n",gpioRead(PIN_BUTTON));
     if(gpioRead(PIN_BUTTON) > PI_LOW){
       printf("[START] Button Pressed\n");
-      setMotorSpeed(FORWARD, 30);
+      setMotorSpeed(FORWARD, 100);
       while (gpioRead(PIN_BUTTON) == PI_HIGH){};
       break;
     }
