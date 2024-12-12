@@ -64,3 +64,6 @@ build:
 clean:
 	rm $(DIR_BIN)/*.* 
 	rm $(TARGET) 
+
+run:
+	sudo ./motor_control

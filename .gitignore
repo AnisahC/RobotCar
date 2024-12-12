@@ -1,6 +1,7 @@
 termOutput
 followLine
 testing.txt
+.vscode
 
 # Prerequisites
 *.d

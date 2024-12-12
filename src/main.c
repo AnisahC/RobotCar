@@ -15,6 +15,7 @@
  *
  * *************/
 
+
 #include <pigpio.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -42,7 +43,7 @@ int init_echo  (pthread_t* t, double* dest, int pin_trigger, int pin_echo);
 #define PIN_SENSOR_ECHO_F_ECHO     20
 #define PIN_SENSOR_ECHO_B_ECHO     23
 
-#define PIN_BUTTON                 18
+#define PIN_BUTTON                 25
 
 #define MICROSECONDS_UNTIL_TERMINATE 4000000
 #define PERIOD_DISPLAY                100000
@@ -166,6 +167,8 @@ int main(int argc, char* agv[]){
     }
     gpioDelay(100000);
   }
+  
+  microsec_remaining = 0;
 
   // STEP 3: TERMINATE
   printf("Terminating program...\n");
@@ -191,7 +194,7 @@ int main(int argc, char* agv[]){
     return -1;
   }
 
-gpioTerminate();
+  gpioTerminate();
   return 0;
 }
 
