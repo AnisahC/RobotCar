@@ -80,44 +80,83 @@ void* th_echo(void* arg){
 
   //Init Pin Modes
   if(gpioSetMode(pin_trigger, MODE_OUT)||
-     gpioSetMode(pin_echo, MODE_IN )){
+     gpioSetMode(pin_echo,    MODE_IN )){
     printf("[!] Failed to set pin modes!\n");
     return NULL;
   }
 
+  char    started_reading;
+  clock_t time_began;
+  clock_t time_end;
+  clock_t time_elapsed;
+
   while(*time_main > 0){
+    double results[9];
+    
+    // Get 9 readings
+    for (int i=0; i < 9; i++) {
+      started_reading = 0;
+      time_began      = 0;
+      time_end        = 0;
+      time_elapsed    = 0;
 
-    if(gpioWrite(pin_trigger, 1)){
-      printf("[!] Error starting trigger pin [%d]!\n", pin_trigger);
-    }
+      // Confirm trigger pin is off
+      gpioWrite(pin_trigger, 0);
+      usleep(2);
 
-    //Keep pulse for 15 microseconds (15000 nanoseconds)
-    usleep(15000);
+      // Begin trigger
+      if(gpioWrite(pin_trigger, 1)){
+        printf("[!] Error starting trigger pin [%d]!\n", pin_trigger);
+      }
 
-    if(gpioWrite(pin_trigger, 0)){
-      printf("[!] Error ending trigger pin [%d]!\n", pin_trigger);
-    }
+      //Keep pulse for 15 microseconds
+      usleep(PULSE_LEN);
 
-    char    started_reading = 0;
-    clock_t time_began      = 0;
-    clock_t time_end        = 0;
+      // End trigger
+      if(gpioWrite(pin_trigger, 0)){
+        printf("[!] Error ending trigger pin [%d]!\n", pin_trigger);
+      }
 
-    //Loop until signal ends (MANUALLY BREAK)
-    while(1){
-      if( (gpioRead(pin_echo)) && (started_reading==0) ){
+      time_began = clock();
+      //Loop until signal ends (MANUALLY BREAK)
+      while (gpioRead(pin_echo) == 0 && *time_main > 0) {
         time_began = clock();
-        started_reading = 1;
       }
-      else if( !(gpioRead(pin_echo)) && (started_reading==1) ){
+
+      while(gpioRead(pin_echo) == 1 && *time_main > 0) {
         time_end = clock();
-        break;
       }
+
+      time_elapsed = time_end - time_began;
+
+      results[i] = ((double) time_elapsed/CLOCKS_PER_SEC) * SPEED_OF_SOUND / 2;  
     }
-    clock_t time_elapsed = time_end - time_began;
+    
+    // Sort the results
+    for (int i = 0; i < 9 - 1; i++) {
+        for (int j = 0; j < 9 - i - 1; j++) {
+            if (results[j] > results[j + 1]) {
+                // Swap the elements
+                double temp = results[j];
+                results[j] = results[j + 1];
+                results[j + 1] = temp;
+            }
+        }
+    }
 
-    *data = (time_elapsed) * ( (double) SOUND_METERS_PER_SECOND )/( (double) CLOCKS_PER_SEC * 2);
+    // Get median result
+    *data = results[4];
 
-    //printf("Distance: [%f m]\n", *data);
+    // Print statement for testing
+    /*
+    if (pin_trigger == 21) {
+      printf("Pin: [%d],    Distance: [%.2f cm]\n", pin_trigger, *data);
+      for (int i=0; i<9; i++) {
+        printf("%.2f, ", results[i]);
+      }
+      printf("\n");
+    }
+    */
 
     //Take a break before updating distance
     if(usleep(PERIOD_SCAN) != 0){

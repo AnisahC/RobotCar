@@ -24,6 +24,9 @@
 //Constant Speed of Sound
 #define SOUND_METERS_PER_SECOND       343
 
+#define PULSE_LEN 15          // Microseconds to trigger sensor
+#define SPEED_OF_SOUND 34300  // Speed of sound in cm/sec
+
 //Modes for pins
 #define MODE_IN   0
 #define MODE_OUT  1
