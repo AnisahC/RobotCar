@@ -112,6 +112,7 @@ int main(int argc, char* agv[]){
     printf("level: %d\n",gpioRead(PIN_BUTTON));
     if(gpioRead(PIN_BUTTON) > PI_LOW){
       printf("[START] Button Pressed\n");
+      while (gpioRead(PIN_BUTTON) == PI_HIGH){};
       break;
     }
     gpioDelay(20000);
