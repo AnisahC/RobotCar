@@ -32,8 +32,31 @@ int init_echo  (pthread_t* t, double* dest, int pin_trigger, int pin_echo);
 
 #include "PCA9685.h"
 
-
 #define DEBUG_FLAG 1
+
+// MOTOR DEFINES
+// ---------------------------------------
+#define LEFT              PCA_CHANNEL_5
+#define LEFT_FORWARD      PCA_CHANNEL_3
+#define LEFT_BACKWARD     PCA_CHANNEL_4
+#define RIGHT             PCA_CHANNEL_0
+#define RIGHT_FORWARD     PCA_CHANNEL_2
+#define RIGHT_REVERSE     PCA_CHANNEL_1
+
+#define PIN_SENSOR_LINE_R          17
+#define PIN_SENSOR_LINE_L          5
+#define PIN_SENSOR_LINE_M          22
+#define PIN_SENSOR_ECHO_F_TRIGGER  21
+#define PIN_SENSOR_ECHO_B_TRIGGER  24
+#define PIN_SENSOR_ECHO_F_ECHO     20
+#define PIN_SENSOR_ECHO_B_ECHO     23
+
+#define FORWARD 1
+#define REVERSE 0
+
+#define TURN_LEFT  0
+#define TURN_RIGHT 1 
+//-----------------------------------------
 
 #define PIN_SENSOR_LINE_R          17
 #define PIN_SENSOR_LINE_L          5
@@ -67,15 +90,105 @@ int looping = 1;
 int found_obstacle = 0;
 
 void handleStop(int signal){
-    printf("Stopped Loop\n");
-    looping = 0;
+  printf("Stopped Loop\n");
+  looping = 0;
 }
+
+// SPEED AND DIRECTION
+int setMotorSpeed(uint8_t dir, uint8_t speed){
+
+  #if(DEBUG_FLAG)
+    printf("setMotorSpeed(%d,%d)\n",dir, speed);
+    #endif
+
+  //Set Duty Cycle
+    switch(dir){
+      case FORWARD:
+        PCA9685_SetLevel(LEFT_FORWARD, 1);
+        PCA9685_SetLevel(LEFT_BACKWARD, 0);
+        PCA9685_SetLevel(RIGHT_FORWARD, 1);
+        PCA9685_SetLevel(RIGHT_REVERSE, 0);
+        break;
+      case REVERSE:
+        PCA9685_SetLevel(LEFT_FORWARD, 0);
+        PCA9685_SetLevel(LEFT_BACKWARD, 1);
+        PCA9685_SetLevel(RIGHT_FORWARD, 0);
+        PCA9685_SetLevel(RIGHT_REVERSE, 1);
+        break;
+      default:
+         printf("[!] Invalid Direction!\n");
+         return -1;
+    }
+   //This gives a "jolt" to allow the motor to have momentum to spin at a slower speed
+   for(int i=100; i>speed; i--){
+      PCA9685_SetPwmDutyCycle(LEFT, i);
+      PCA9685_SetPwmDutyCycle(RIGHT, i);
+      usleep(1000);
+   }
+   //Settles on final speed
+   PCA9685_SetPwmDutyCycle(LEFT, speed);
+   PCA9685_SetPwmDutyCycle(RIGHT, speed);
+
+   //Success
+   return speed;
+
+}
+
+// TURN MOTOR
+int turnMotor(uint8_t dir) {
+   #if(DEBUG_FLAG)
+   printf("turning motor\n",dir);
+   #endif
+
+  //Set Duty Cycle
+  switch(dir) {
+      case TURN_LEFT:
+        printf("inside left!\n");
+        PCA9685_SetLevel(LEFT_FORWARD, 0);
+        PCA9685_SetLevel(LEFT_BACKWARD, 0);
+        PCA9685_SetLevel(RIGHT_FORWARD, 1);
+        PCA9685_SetLevel(RIGHT_REVERSE, 0);
+        break;
+      case TURN_RIGHT:
+        printf("inside right!\n");
+        PCA9685_SetLevel(LEFT_FORWARD, 1);
+        PCA9685_SetLevel(LEFT_BACKWARD, 0);
+        PCA9685_SetLevel(RIGHT_FORWARD, 0);
+        PCA9685_SetLevel(RIGHT_REVERSE, 0);
+        break;
+      default:
+        printf("[!] Invalid Direction!\n");
+        return -1;
+  }
+   if(dir == TURN_LEFT) {
+      printf("setting for left!\n");
+      PCA9685_SetPwmDutyCycle(RIGHT, 100);
+   } 
+   else if(dir == TURN_RIGHT) {
+      printf("setting duty cycle for right\n");
+      PCA9685_SetPwmDutyCycle(LEFT, 100);
+   }
+
+   return 1;
+}
+
+// STOP MOTOR
+int stopMotor(){
+
+  PCA9685_SetPwmDutyCycle(LEFT, 0);
+  PCA9685_SetPwmDutyCycle(RIGHT, 0);
+
+  eturn 0;
+}
+
 
 /* MAIN METHOD */
 int main(int argc, char* agv[]){
 
   // STEP 1: INITIALIZE
   printf("Initializing...\n");
+  PCA9685_Init(0x40);
+  PCA9685_SetPWMFreq(100);
   if(gpioInitialise()<0){
     printf("[!] Initialization of pigpio failed! Aborting!\n");
     return -1;
@@ -112,6 +225,7 @@ int main(int argc, char* agv[]){
     printf("level: %d\n",gpioRead(PIN_BUTTON));
     if(gpioRead(PIN_BUTTON) > PI_LOW){
       printf("[START] Button Pressed\n");
+      setMotorSpeed(FORWARD, 30);
       while (gpioRead(PIN_BUTTON) == PI_HIGH){};
       break;
     }
@@ -128,6 +242,8 @@ int main(int argc, char* agv[]){
 
     if(gpioRead(PIN_BUTTON) > PI_LOW){
       printf("[TERMINATE] Button Pressed\n");
+      stopMotor();
+      gpioTerminate();
       looping = 0;
       break;
     }
