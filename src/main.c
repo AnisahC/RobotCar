@@ -225,7 +225,6 @@ int main(int argc, char* agv[]){
     printf("level: %d\n",gpioRead(PIN_BUTTON));
     if(gpioRead(PIN_BUTTON) > PI_LOW){
       printf("[START] Button Pressed\n");
-      setMotorSpeed(FORWARD, 100);
       while (gpioRead(PIN_BUTTON) == PI_HIGH){};
       break;
     }
@@ -253,11 +252,12 @@ int main(int argc, char* agv[]){
         found_obstacle = 1;
       }
       if(found_obstacle != 1){
-        printf("Continue 0 point turn\n");
+        //printf("Continue 0 point turn\n");
         continue;
       }
       if (found_obstacle && ((data_echoB*100 < MIN_DISTANCE) && data_echoB*100 > MAX_DISTANCE)){
         printf("[ECHO] past obstacle, go straight \n");
+        usleep(200000);
         turning = 0;
         found_obstacle = 0;
         continue;
@@ -268,18 +268,22 @@ int main(int argc, char* agv[]){
     }else{//on line
       if (data_echoF > 100){
         printf("[ECHO] obstacle detected %f\n",data_echoF);
+        usleep(200000);
         turning = 1;
         continue;
       }
       if(data_lineM != 0){
         printf("continue forward\n");
+        usleep(200000);
         continue;
       }
       if(data_lineR != 0){
         printf("right sensor, turn left\n");
+        usleep(200000);
       }
       if(data_lineL != 0){
         printf("left sensor, turn right\n");
+        usleep(200000);
       }
     }
     gpioDelay(100000);
