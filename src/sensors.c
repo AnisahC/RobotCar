@@ -80,7 +80,7 @@ void* th_echo(void* arg){
 
   //Init Pin Modes
   if(gpioSetMode(pin_trigger, MODE_OUT)||
-     gpioSetMode(pin_echo,    MODE_IN )){
+     gpioSetMode(pin_echo, MODE_IN )){
     printf("[!] Failed to set pin modes!\n");
     return NULL;
   }
