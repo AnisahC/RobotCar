@@ -61,6 +61,8 @@ int init_echo  (pthread_t* t, double* dest, int pin_trigger, int pin_echo);
 #define PIN_SENSOR_LINE_R          17
 #define PIN_SENSOR_LINE_L          5
 #define PIN_SENSOR_LINE_M          22
+#define PIN_SENSOR_LINE_INNER_R    13
+#define PIN_SENSOR_LINE_INNER_L    26
 #define PIN_SENSOR_ECHO_F_TRIGGER  21
 #define PIN_SENSOR_ECHO_B_TRIGGER  24
 #define PIN_SENSOR_ECHO_F_ECHO     20
@@ -81,6 +83,8 @@ useconds_t  	microsec_remaining = MICROSECONDS_UNTIL_TERMINATE;
 int             data_lineR = -1;
 int             data_lineL = -1;
 int             data_lineM = -1;
+int             data_lineIR = -1;
+int             data_lineIL = -1;
 
 double          data_echoF = -1;
 double          data_echoB = -1;
@@ -197,6 +201,8 @@ int main(int argc, char* agv[]){
   if( (gpioSetMode(PIN_SENSOR_LINE_L, PI_INPUT) < 0) ||
       (gpioSetMode(PIN_SENSOR_LINE_R, PI_INPUT) < 0) ||
       (gpioSetMode(PIN_SENSOR_LINE_M, PI_INPUT) < 0) ||
+      (gpioSetMode(PIN_SENSOR_LINE_INNER_R, PI_INPUT) < 0) ||
+      (gpioSetMode(PIN_SENSOR_LINE_INNER_L, PI_INPUT) < 0) ||
       (gpioSetMode(PIN_BUTTON, PI_INPUT) < 0)){
     printf("[!] gpioSetMode failed! Aborting!\n");
     return -1;
@@ -209,12 +215,16 @@ int main(int argc, char* agv[]){
   pthread_t thread_lineR,
             thread_lineL,
             thread_lineM,
+            thread_lineIR,
+            thread_lineIL,
             thread_echoF,
             thread_echoB;
 
   if( (init_sensor(&thread_lineL, &data_lineL, PIN_SENSOR_LINE_L) < 0) ||
       (init_sensor(&thread_lineR, &data_lineR, PIN_SENSOR_LINE_R) < 0) ||
       (init_sensor(&thread_lineM, &data_lineM, PIN_SENSOR_LINE_M) < 0) ||
+      (init_sensor(&thread_lineIR, &data_lineIR, PIN_SENSOR_LINE_INNER_R) < 0) ||
+      (init_sensor(&thread_lineIL, &data_lineIL, PIN_SENSOR_LINE_INNER_L) < 0) ||
       (init_echo  (&thread_echoF, &data_echoF, PIN_SENSOR_ECHO_F_TRIGGER,  PIN_SENSOR_ECHO_F_ECHO) < 0) ||
       (init_echo  (&thread_echoB, &data_echoB, PIN_SENSOR_ECHO_B_TRIGGER,  PIN_SENSOR_ECHO_B_ECHO) < 0)){
 
@@ -273,20 +283,24 @@ int main(int argc, char* agv[]){
         continue;
       }
       if(data_lineM != 0){
-        printf("continue forward\n");
-        usleep(200000);
+        //printf("continue forward\n");
         continue;
       }
       if(data_lineR != 0){
-        printf("right sensor, turn left\n");
-        usleep(200000);
+        //printf("right sensor, turn left\n");
       }
       if(data_lineL != 0){
-        printf("left sensor, turn right\n");
-        usleep(200000);
+        //printf("left sensor, turn right\n");
       }
+      if(data_lineIL != 0){
+
+      }
+      if(data_lineIR != 0){
+        
+      }
+      printf("M: %d | L: %d | IL: %d | R: %d | IR: %d\n",data_lineM,data_lineL,data_lineIL,data_lineR,data_lineIR);
     }
-    gpioDelay(100000);
+    gpioDelay(120000);
   }
   
   microsec_remaining = 0;
