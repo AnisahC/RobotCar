@@ -238,6 +238,8 @@ int main(int argc, char* agv[]){
       looping = 0;
       break;
     }
+    printf("IN THE LOOP------------------\n");
+    usleep(1000*1000);
 
     if(gpioRead(PIN_BUTTON) > PI_LOW){
       printf("[TERMINATE] Button Pressed\n");
@@ -248,6 +250,7 @@ int main(int argc, char* agv[]){
     }
 
     if(turning){
+      printf("Distance is: [%f]\n", data_echoF);
       if ((found_obstacle != 1) && (data_echoB*100 > MIN_DISTANCE) && data_echoB*100 < MAX_DISTANCE){
         found_obstacle = 1;
       }
@@ -266,7 +269,7 @@ int main(int argc, char* agv[]){
         printf("found line while turning, turn opposite of sensor side\n");
       }
     }else{//on line
-      if (data_echoF > 100){
+      if (data_echoF > 50){
         printf("[ECHO] obstacle detected %f\n",data_echoF);
         usleep(200000);
         turning = 1;
@@ -286,7 +289,8 @@ int main(int argc, char* agv[]){
         usleep(200000);
       }
     }
-    gpioDelay(100000);
+    usleep(100 * 1000);
+    //gpioDelay(100000);
   }
   
   microsec_remaining = 0;

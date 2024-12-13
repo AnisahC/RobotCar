@@ -27,6 +27,8 @@
 #define PULSE_LEN 15          // Microseconds to trigger sensor
 #define SPEED_OF_SOUND 34300  // Speed of sound in cm/sec
 
+#define MAX_TIME 8 * CLOCKS_PER_SEC / 343
+
 //Modes for pins
 #define MODE_IN   0
 #define MODE_OUT  1
