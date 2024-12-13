@@ -249,6 +249,8 @@ int main(int argc, char* agv[]){
       looping = 0;
       break;
     }
+    printf("IN THE LOOP------------------\n");
+    //usleep(1000*1000);
 
     if(gpioRead(PIN_BUTTON) > PI_LOW){
       printf("[TERMINATE] Button Pressed\n");
@@ -259,6 +261,8 @@ int main(int argc, char* agv[]){
     }
 
     if(turning){
+      printf("Inside Turning\n");
+      //printf("Distance is: [%f]\n", data_echoF);
       if ((found_obstacle != 1) && (data_echoB*100 > MIN_DISTANCE) && data_echoB*100 < MAX_DISTANCE){
         found_obstacle = 1;
       }
@@ -267,7 +271,7 @@ int main(int argc, char* agv[]){
         continue;
       }
       if (found_obstacle && ((data_echoB*100 < MIN_DISTANCE) && data_echoB*100 > MAX_DISTANCE)){
-        printf("[ECHO] past obstacle, go straight \n");
+        //printf("[ECHO] past obstacle, go straight \n");
         usleep(200000);
         turning = 0;
         found_obstacle = 0;
@@ -277,16 +281,16 @@ int main(int argc, char* agv[]){
         printf("found line while turning, turn opposite of sensor side\n");
       }
     }else{//on line
-      direction = 0;
+      direction = 0; /*
       if (data_echoF > 100){
         printf("[ECHO] obstacle detected %f\n",data_echoF);
         usleep(200000);
         turning = 1;
         continue;
-      }
+      } */
       if(data_lineM != 0){
         //printf("continue forward\n");
-        continue;
+        //continue;
       }
       if(data_lineR != 0){
         //printf("right sensor, turn left\n");
@@ -302,7 +306,10 @@ int main(int argc, char* agv[]){
       if(data_lineIR != 0){
         direction += 0.25;
       }
-      printf("M: %d | L: %d | IL: %d | R: %d | IR: %d\n",data_lineM,data_lineL,data_lineIL,data_lineR,data_lineIR);
+      if(direction == 0 && data_lineR == 1){
+        //turn left
+      }
+      printf("L: %d | IL: %d | M: %d | IR: %d | R: %d\n",data_lineL,data_lineIL,data_lineM,data_lineIR,data_lineR);
       printf("direction : %lf\n",direction);
     }
     gpioDelay(120000);
