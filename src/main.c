@@ -188,6 +188,7 @@ int stopMotor(){
 
 /* MAIN METHOD */
 int main(int argc, char* agv[]){
+  double direction = 0;
 
   // STEP 1: INITIALIZE
   printf("Initializing...\n");
@@ -276,6 +277,7 @@ int main(int argc, char* agv[]){
         printf("found line while turning, turn opposite of sensor side\n");
       }
     }else{//on line
+      direction = 0;
       if (data_echoF > 100){
         printf("[ECHO] obstacle detected %f\n",data_echoF);
         usleep(200000);
@@ -288,17 +290,20 @@ int main(int argc, char* agv[]){
       }
       if(data_lineR != 0){
         //printf("right sensor, turn left\n");
+        direction += 1;
       }
       if(data_lineL != 0){
+        direction -=1;
         //printf("left sensor, turn right\n");
       }
       if(data_lineIL != 0){
-
+        direction -=.25;
       }
       if(data_lineIR != 0){
-        
+        direction += 0.25;
       }
       printf("M: %d | L: %d | IL: %d | R: %d | IR: %d\n",data_lineM,data_lineL,data_lineIL,data_lineR,data_lineIR);
+      printf("direction : %lf\n",direction);
     }
     gpioDelay(120000);
   }
