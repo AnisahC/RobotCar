@@ -27,7 +27,8 @@
 /* Prototype Signatures for Sensors */
 #include "sensors.h"
 int init_sensor(pthread_t* t, int*    dest, int pin);
-int init_echo  (pthread_t* t, double* dest, int pin_trigger, int pin_echo);
+int init_echo  (pthread_t* t, double* dest, int pin_trigger, int  pin_echo);
+int init_button(pthread_t* t, char*   dest, int pin,         char initial_status);
 
 #include "PCA9685.h"
 
@@ -237,4 +238,26 @@ int init_echo(pthread_t* t, double* dest, int pin_trigger, int pin_echo){
   genericstruct = NULL;
 
   return 0; //Success
+}
+
+int init_button(pthread_t* t, char* dest, int pin, char initial_state){
+  #if(DEBUG_FLAG)
+  printf("init_button([%p], [%p], [%d], [%c])\n", t, dest, pin, initial_state);
+  #endif
+
+  button_param_t* genericstruct = malloc(sizeof(button_param_t));
+
+  //Assign relevant information for thread to use
+  genericstruct->data          = dest;
+  genericstruct->pin           = pin;
+  genericstruct->initial_state = initial_state;
+
+  //Variable will be assigned to the inital state's value,
+  //the thread will flip the value and terminate once the button is pressed
+  *genericstruct->data = initial_state;
+
+  //Struct will be freed by the thread above
+  genericstruct = NULL;
+
+  return 0;
 }
