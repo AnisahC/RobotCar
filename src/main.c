@@ -44,14 +44,6 @@ int init_echo  (pthread_t* t, double* dest, int pin_trigger, int pin_echo);
 #define RIGHT_FORWARD     PCA_CHANNEL_2
 #define RIGHT_REVERSE     PCA_CHANNEL_1
 
-#define PIN_SENSOR_LINE_R          17
-#define PIN_SENSOR_LINE_L          5
-#define PIN_SENSOR_LINE_M          22
-#define PIN_SENSOR_ECHO_F_TRIGGER  21
-#define PIN_SENSOR_ECHO_B_TRIGGER  24
-#define PIN_SENSOR_ECHO_F_ECHO     20
-#define PIN_SENSOR_ECHO_B_ECHO     23
-
 #define FORWARD 1
 #define REVERSE 0
 
@@ -155,6 +147,7 @@ int turnMotor(uint8_t dir) {
         break;
       case TURN_RIGHT:
         printf("turning right!\n");
+
         PCA9685_SetLevel(LEFT_FORWARD, 1);
         PCA9685_SetLevel(LEFT_BACKWARD, 0);
         PCA9685_SetLevel(RIGHT_FORWARD, 0);
@@ -206,7 +199,7 @@ int main(int argc, char* agv[]){
 
 
   // STEP 2: SPAWN THREADS
-  printf("Spawning threads...\n");
+  //printf("Spawning threads...\n");
 
   pthread_t thread_lineR,
             thread_lineL,
@@ -258,6 +251,7 @@ int main(int argc, char* agv[]){
 
     if(turning){
       printf("Inside Turning\n");
+      
       //printf("Distance is: [%f]\n", data_echoF);
       if ((found_obstacle != 1) && (data_echoB*100 > MIN_DISTANCE) && data_echoB*100 < MAX_DISTANCE){
         found_obstacle = 1;
