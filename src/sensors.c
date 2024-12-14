@@ -104,7 +104,7 @@ void* th_echo(void* arg){
       gpioWrite(pin_trigger, 0);
       usleep(2);
 
-      printf("Triggering...    ");
+      //printf("Triggering...    ");
       // Begin trigger
       if(gpioWrite(pin_trigger, 1)){
         printf("[!] Error starting trigger pin [%d]!\n", pin_trigger);
@@ -118,9 +118,9 @@ void* th_echo(void* arg){
         printf("[!] Error ending trigger pin [%d]!\n", pin_trigger);
       }
 
-      printf("Triggered\n");
+      //printf("Triggered\n");
 
-      printf("Finding start time...     ");
+      //printf("Finding start time...     ");
       time_began = clock();
       //Loop until signal ends (MANUALLY BREAK)
       while (gpioRead(pin_echo) == 0 && *time_main > 0) {
@@ -131,8 +131,8 @@ void* th_echo(void* arg){
       }
       time_began = clock();
       
-      printf("Start time found\n");
-      printf("Finding end time...       ");
+      //printf("Start time found\n");
+      //printf("Finding end time...       ");
       while(gpioRead(pin_echo) == 1 && *time_main > 0) {
         time_end = clock();
         if (time_end - time_began > MAX_TIME) {
@@ -140,7 +140,7 @@ void* th_echo(void* arg){
           break;
         }
       }
-      printf("Found end time\n");
+      //printf("Found end time\n");
 
       time_elapsed = time_end - time_began;
 
