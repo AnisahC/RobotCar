@@ -46,7 +46,7 @@ void* th_sensor(void* arg){
   free(arg);
   arg = NULL;
 
-  while(flag){
+  while(*flag){
     *data = gpioRead(pin);
 
     if(usleep(PERIOD_SCAN) != 0){
@@ -85,7 +85,9 @@ void* th_echo(void* arg){
     return NULL;
   }
 
-  while(flag){
+  while(*flag){
+
+    printf("Looping in echo...\n");
 
     if(gpioWrite(pin_trigger, 1)){
       printf("[!] Error starting trigger pin [%d]!\n", pin_trigger);
