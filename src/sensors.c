@@ -125,7 +125,7 @@ void* th_echo(void* arg){
       //Loop until signal ends (MANUALLY BREAK)
       while (gpioRead(pin_echo) == 0 && *time_main > 0) {
          if (clock() - time_began > MAX_TIME) {
-          printf("Signal out of range\n");
+          //printf("Signal out of range\n");
           break;
          }
       }
@@ -136,7 +136,7 @@ void* th_echo(void* arg){
       while(gpioRead(pin_echo) == 1 && *time_main > 0) {
         time_end = clock();
         if (time_end - time_began > MAX_TIME) {
-          printf("Signal out of range\n");
+          //printf("Signal out of range\n");
           break;
         }
       }
@@ -163,14 +163,14 @@ void* th_echo(void* arg){
     *data = results[4];
 
     // Print statement for testing
-    
+    /*
     if (pin_trigger == 21) {
       printf("Pin: [%d],    Distance: [%.2f cm]\n", pin_trigger, *data);
       for (int i=0; i<9; i++) {
         printf("%.2f, ", results[i]);
       }
       printf("\n");
-    }
+    } */
     
 
     //Take a break before updating distance

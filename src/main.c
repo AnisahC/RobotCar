@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <time.h>
+#include <math.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <pthread.h>
@@ -53,6 +54,8 @@ int init_echo  (pthread_t* t, double* dest, int pin_trigger, int pin_echo);
 #define PIN_SENSOR_LINE_R          17
 #define PIN_SENSOR_LINE_L          5
 #define PIN_SENSOR_LINE_M          22
+#define PIN_SENSOR_LINE_INNER_R    13
+#define PIN_SENSOR_LINE_INNER_L    26
 #define PIN_SENSOR_ECHO_F_TRIGGER  21
 #define PIN_SENSOR_ECHO_B_TRIGGER  24
 #define PIN_SENSOR_ECHO_F_ECHO     20
@@ -73,6 +76,8 @@ useconds_t  	microsec_remaining = MICROSECONDS_UNTIL_TERMINATE;
 int             data_lineR = -1;
 int             data_lineL = -1;
 int             data_lineM = -1;
+int             data_lineIR = -1;
+int             data_lineIL = -1;
 
 double          data_echoF = -1;
 double          data_echoB = -1;
@@ -96,12 +101,14 @@ int setMotorSpeed(uint8_t dir, uint8_t speed){
   //Set Duty Cycle
     switch(dir){
       case FORWARD:
+      printf("going foward");
         PCA9685_SetLevel(LEFT_FORWARD, 1);
         PCA9685_SetLevel(LEFT_BACKWARD, 0);
         PCA9685_SetLevel(RIGHT_FORWARD, 1);
         PCA9685_SetLevel(RIGHT_REVERSE, 0);
         break;
       case REVERSE:
+        printf("going backward");
         PCA9685_SetLevel(LEFT_FORWARD, 0);
         PCA9685_SetLevel(LEFT_BACKWARD, 1);
         PCA9685_SetLevel(RIGHT_FORWARD, 0);
@@ -128,21 +135,19 @@ int setMotorSpeed(uint8_t dir, uint8_t speed){
 
 // TURN MOTOR
 int turnMotor(uint8_t dir) {
-   #if(DEBUG_FLAG)
-   //printf("turning motor\n",dir);
-   #endif
 
   //Set Duty Cycle
   switch(dir) {
       case TURN_LEFT:
-        //printf("inside left!\n");
+        printf("turning left!\n");
         PCA9685_SetLevel(LEFT_FORWARD, 0);
         PCA9685_SetLevel(LEFT_BACKWARD, 1);
         PCA9685_SetLevel(RIGHT_FORWARD, 1);
         PCA9685_SetLevel(RIGHT_REVERSE, 0);
         break;
       case TURN_RIGHT:
-        //printf("inside right!\n");
+        printf("turning right!\n");
+
         PCA9685_SetLevel(LEFT_FORWARD, 1);
         PCA9685_SetLevel(LEFT_BACKWARD, 0);
         PCA9685_SetLevel(RIGHT_FORWARD, 0);
@@ -155,7 +160,6 @@ int turnMotor(uint8_t dir) {
 
   PCA9685_SetPwmDutyCycle(RIGHT, 100);
   PCA9685_SetPwmDutyCycle(LEFT, 100);
-
 
    return 1;
 }
@@ -172,6 +176,7 @@ int stopMotor(){
 
 /* MAIN METHOD */
 int main(int argc, char* agv[]){
+  double direction = 0;
 
   // STEP 1: INITIALIZE
   printf("Initializing...\n");
@@ -185,6 +190,8 @@ int main(int argc, char* agv[]){
   if( (gpioSetMode(PIN_SENSOR_LINE_L, PI_INPUT) < 0) ||
       (gpioSetMode(PIN_SENSOR_LINE_R, PI_INPUT) < 0) ||
       (gpioSetMode(PIN_SENSOR_LINE_M, PI_INPUT) < 0) ||
+      (gpioSetMode(PIN_SENSOR_LINE_INNER_R, PI_INPUT) < 0) ||
+      (gpioSetMode(PIN_SENSOR_LINE_INNER_L, PI_INPUT) < 0) ||
       (gpioSetMode(PIN_BUTTON, PI_INPUT) < 0)){
     printf("[!] gpioSetMode failed! Aborting!\n");
     return -1;
@@ -197,12 +204,16 @@ int main(int argc, char* agv[]){
   pthread_t thread_lineR,
             thread_lineL,
             thread_lineM,
+            thread_lineIR,
+            thread_lineIL,
             thread_echoF,
             thread_echoB;
 
   if( (init_sensor(&thread_lineL, &data_lineL, PIN_SENSOR_LINE_L) < 0) ||
       (init_sensor(&thread_lineR, &data_lineR, PIN_SENSOR_LINE_R) < 0) ||
       (init_sensor(&thread_lineM, &data_lineM, PIN_SENSOR_LINE_M) < 0) ||
+      (init_sensor(&thread_lineIR, &data_lineIR, PIN_SENSOR_LINE_INNER_R) < 0) ||
+      (init_sensor(&thread_lineIL, &data_lineIL, PIN_SENSOR_LINE_INNER_L) < 0) ||
       (init_echo  (&thread_echoF, &data_echoF, PIN_SENSOR_ECHO_F_TRIGGER,  PIN_SENSOR_ECHO_F_ECHO) < 0) ||
       (init_echo  (&thread_echoB, &data_echoB, PIN_SENSOR_ECHO_B_TRIGGER,  PIN_SENSOR_ECHO_B_ECHO) < 0)){
 
@@ -218,16 +229,17 @@ int main(int argc, char* agv[]){
     }
     gpioDelay(20000);
   }
+  signal(SIGTSTP,handleStop);
 
   gpioDelay(20000);
   //loop while time is not
   while(looping){//off line
-    if (signal(SIGTSTP,handleStop) == SIG_ERR){
-      looping = 0;
-      break;
-    }
+    // if (signal(SIGTSTP,handleStop) == SIG_ERR){
+    //   looping = 0;
+    //   break;
+    // }
     printf("IN THE LOOP------------------\n");
-    usleep(1000*1000);
+    //usleep(1000*1000);
 
     if(gpioRead(PIN_BUTTON) > PI_LOW){
       printf("[TERMINATE] Button Pressed\n");
@@ -238,6 +250,8 @@ int main(int argc, char* agv[]){
     }
 
     if(turning){
+      printf("Inside Turning\n");
+      
       //printf("Distance is: [%f]\n", data_echoF);
       if ((found_obstacle != 1) && (data_echoB*100 > MIN_DISTANCE) && data_echoB*100 < MAX_DISTANCE){
         found_obstacle = 1;
@@ -247,7 +261,7 @@ int main(int argc, char* agv[]){
         continue;
       }
       if (found_obstacle && ((data_echoB*100 < MIN_DISTANCE) && data_echoB*100 > MAX_DISTANCE)){
-        printf("[ECHO] past obstacle, go straight \n");
+        //printf("[ECHO] past obstacle, go straight \n");
         usleep(200000);
         turning = 0;
         found_obstacle = 0;
@@ -257,29 +271,83 @@ int main(int argc, char* agv[]){
         printf("found line while turning, turn opposite of sensor side\n");
       }
     }else{//on line
-      if (data_echoF > 50){
+      direction = 0; /*
+      if (data_echoF > 100){
         printf("[ECHO] obstacle detected %f\n",data_echoF);
         usleep(200000);
         turning = 1;
         continue;
-      }
+      } */
       if(data_lineM != 0){
-        printf("continue forward\n");
-        usleep(200000);
-        continue;
+        setMotorSpeed(FORWARD, 100);
+        //printf("continue forward\n");
+        //continue;
       }
       if(data_lineR != 0){
-        printf("right sensor, turn left\n");
-        usleep(200000);
+        //printf("right sensor, turn left\n");
+        direction += 1;
       }
       if(data_lineL != 0){
-        printf("left sensor, turn right\n");
-        usleep(200000);
+        direction -=1;
+        //printf("left sensor, turn right\n");
+      }
+      if(data_lineIL != 0){
+        direction -=.25;
+      }
+      if(data_lineIR != 0){
+        direction += 0.25;
+      }
+      // if(direction == 0 && data_lineR == 1){
+      //   //turn left
+      //   direction = -3;
+      // }
+      printf("L: %d | IL: %d | M: %d | IR: %d | R: %d\n",data_lineL,data_lineIL,data_lineM,data_lineIR,data_lineR);
+      printf("direction : %lf\n",direction);
+    }
+
+    if(direction == 0) {
+      if (data_lineIL == 1 || data_lineIR == 1) {
+        // forward
+        setMotorSpeed(FORWARD, 10);
+      }
+    } else if(direction < 0) {
+      turnMotor(TURN_LEFT);
+      if(direction == -1) {
+        gpioDelay(10000);
+      } else {
+        gpioDelay(500);
+      }
+    } else if(direction > 0) {
+      turnMotor(TURN_RIGHT);
+      if(direction == 1) {
+        gpioDelay(10000);
+      } else {
+        gpioDelay(500);
       }
     }
-    usleep(100 * 1000);
-    //gpioDelay(100000);
+
+    if(data_lineR !=1 && data_lineM != 1 && data_lineL != 1 && data_lineIL != 1 && data_lineIR != 1) {
+      setMotorSpeed(REVERSE, 15);
+    }
+
+
+
+  //   if(direction < 0){
+  //     //go left
+  //     turnMotor(TURN_LEFT);
+  //   }else if (abs(direction) >= 1) {
+  //     usleep(10000000);
+  //   }else if(direction > 0){
+  //     //go right
+  //     turnMotor(TURN_RIGHT);
+  //   }else if(abs(direction) >= 0.25) {
+  //     gpioDelay(50000);
+  //   }else{
+  //     setMotorSpeed(FORWARD, 50);
+  //   }
+    gpioDelay(100000);
   }
+  
   
   microsec_remaining = 0;
 
@@ -309,6 +377,7 @@ int main(int argc, char* agv[]){
 
   gpioTerminate();
   return 0;
+  
 }
 
 /* Thread Function Implementations */
