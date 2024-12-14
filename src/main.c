@@ -120,7 +120,7 @@ int main(int argc, char* agv[]){
     printf("[!] Error joining thread_button!\n");
     return -1;
   }
-  if( init_button(&thread_button, &is_running, PIN_BUTTON, false) < 0){
+  if( init_button(&thread_button, &is_running, PIN_BUTTON, true) < 0){
     printf("[!] FAILED TO INITIALIZE BUTTON!\n");
     return -1;
   }
