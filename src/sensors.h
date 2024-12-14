@@ -55,7 +55,7 @@ typedef struct BUTTON_PARAM{
   char*       data;//address of data to change
   int         pin;//pin number to read from
   char        initial_state;//What the field will be set to when thread is initialized, switched when button hit
-}
+} button_param_t;
 
 /* Prototypes for Sensor Data */
 void* th_sensor    (void* arg);//Sensors that simply read 1 or 0

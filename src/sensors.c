@@ -140,8 +140,8 @@ void* th_button(void* arg){
 
   //Extract information from passed struct
   char* data         = ((button_param_t*) arg)->data;
-  int   pin          = ((button_param_t*) arg)->data;
-  char  inital_state = ((button_param_t*) arg)->data;
+  int   pin          = ((button_param_t*) arg)->pin;
+  char  initial_state = ((button_param_t*) arg)->initial_state;
 
   //FREE STRUCT
   free(arg);
