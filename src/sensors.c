@@ -39,14 +39,14 @@ void* th_sensor(void* arg){
   //Get Pin number to read from
   int pin = ((sensor_param_t*) arg)->pin;
   //Get pointer to timer
-  useconds_t* time = ((sensor_param_t*) arg)->time;
+  bool* flag = ((sensor_param_t*) arg)->flag;
 
 
   //FREE STRUCT
   free(arg);
   arg = NULL;
 
-  while(*time > 0){
+  while(flag){
     *data = gpioRead(pin);
 
     if(usleep(PERIOD_SCAN) != 0){
@@ -72,7 +72,7 @@ void* th_echo(void* arg){
   double*     data         = ((echo_param_t*) arg)->data;
   int         pin_trigger  = ((echo_param_t*) arg)->pin_trigger;
   int         pin_echo     = ((echo_param_t*) arg)->pin_echo;
-  useconds_t* time_main    = ((echo_param_t*) arg)->time;
+  bool*       flag         = ((echo_param_t*) arg)->flag;
 
   //FREE STRUCT
   free(arg);
@@ -85,7 +85,7 @@ void* th_echo(void* arg){
     return NULL;
   }
 
-  while(*time_main > 0){
+  while(flag){
 
     if(gpioWrite(pin_trigger, 1)){
       printf("[!] Error starting trigger pin [%d]!\n", pin_trigger);
@@ -139,9 +139,9 @@ void* th_button(void* arg){
   #endif
 
   //Extract information from passed struct
-  char* data         = ((button_param_t*) arg)->data;
+  bool* data         = ((button_param_t*) arg)->data;
   int   pin          = ((button_param_t*) arg)->pin;
-  char  initial_state = ((button_param_t*) arg)->initial_state;
+  bool  initial_state = ((button_param_t*) arg)->initial_state;
 
   //FREE STRUCT
   free(arg);
@@ -157,6 +157,13 @@ void* th_button(void* arg){
   while(*data == initial_state){
 
     if(gpioRead(pin)){
+       printf("BUTTON DOWN!\n");
+       //loop until button raised (stops button immediately changing back)
+       while(gpioRead(pin)){
+          printf(".");
+          usleep(PERIOD_SCAN);
+       }
+       printf("BUTTON UP!\n");
        *data = !initial_state;
     }
 
@@ -168,7 +175,7 @@ void* th_button(void* arg){
 
 
   #if(DEBUG_FLAG)
-  printf("th_echo(%p) TERMINATE\n", arg);
+  printf("th_button(%p) TERMINATE\n", arg);
   #endif
   return NULL;
 }

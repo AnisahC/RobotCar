@@ -28,7 +28,7 @@
 #include "sensors.h"
 int init_sensor(pthread_t* t, int*    dest, int pin);
 int init_echo  (pthread_t* t, double* dest, int pin_trigger, int  pin_echo);
-int init_button(pthread_t* t, char*   dest, int pin,         char initial_status);
+int init_button(pthread_t* t, bool*   dest, int pin,         bool initial_status);
 
 #include "PCA9685.h"
 
@@ -55,6 +55,8 @@ int init_button(pthread_t* t, char*   dest, int pin,         char initial_status
 
 /* Global variables for threads to utilize */
 useconds_t  	microsec_remaining = MICROSECONDS_UNTIL_TERMINATE;
+bool            is_running = false;
+
 int             data_lineR = -1;
 int             data_lineL = -1;
 int             data_lineM = -1;
@@ -97,8 +99,35 @@ int main(int argc, char* agv[]){
             thread_lineL,
             thread_lineM,
             thread_echoF,
-            thread_echoB;
+            thread_echoB,
+            thread_button;
 
+  //Initialize button that will start the program
+  if( init_button(&thread_button, &is_running, PIN_BUTTON, false) < 0){
+    printf("[!] FAILED TO INITIALIZE BUTTON!\n");
+    return -1;
+  }
+
+  //Loop until button is pressed
+  printf("Please press the button on pin [%d] to start the program.\n", PIN_BUTTON);
+  while(!is_running){
+     usleep(PERIOD_SCAN);
+  }
+
+
+  //Join thread for button and remake it.
+  if(pthread_join(thread_button, NULL) != 0){
+    printf("[!] Error joining thread_button!\n");
+    return -1;
+  }
+  if( init_button(&thread_button, &is_running, PIN_BUTTON, false) < 0){
+    printf("[!] FAILED TO INITIALIZE BUTTON!\n");
+    return -1;
+  }
+
+
+  //Init all sensors once button has been pressed
+  printf("Starting Program...\n");
   if( (init_sensor(&thread_lineL, &data_lineL, PIN_SENSOR_LINE_L) < 0) ||
       (init_sensor(&thread_lineR, &data_lineR, PIN_SENSOR_LINE_R) < 0) ||
       (init_sensor(&thread_lineM, &data_lineM, PIN_SENSOR_LINE_M) < 0) ||
@@ -108,18 +137,13 @@ int main(int argc, char* agv[]){
      printf("[!] FAILED TO INITIALIZE SENSORS!\n");
      return -1;
   }
-  while(gpioRead(PIN_BUTTON) != PI_BAD_GPIO){
-    printf("level: %d\n",gpioRead(PIN_BUTTON));
-    if(gpioRead(PIN_BUTTON) > PI_LOW){
-      printf("[START] Button Pressed\n");
-      break;
-    }
-    gpioDelay(20000);
-  }
+
+
+
 
   gpioDelay(20000);
   //loop while time is not
-  while(looping){//off line
+  while(is_running){//off line
     if (signal(SIGTSTP,handleStop) == SIG_ERR){
       looping = 0;
       break;
@@ -165,7 +189,7 @@ int main(int argc, char* agv[]){
         printf("left sensor, turn right\n");
       }
     }
-    gpioDelay(100000);
+    gpioDelay(PERIOD_DISPLAY);
   }
 
   // STEP 3: TERMINATE
@@ -175,24 +199,34 @@ int main(int argc, char* agv[]){
     printf("[!] Error joining thread_lineL!\n");
     return -1;
   }
+  else{printf("Joined thread_lineL\n");}
   if(pthread_join(thread_lineM, NULL) != 0){
     printf("[!] Error joining thread_lineM!\n");
     return -1;
   }
+  else{printf("Joined thread_lineM\n");}
   if(pthread_join(thread_lineR, NULL) != 0){
     printf("[!] Error joining thread_lineR!\n");
     return -1;
   }
+  else{printf("Joined thread_lineR\n");}
   if(pthread_join(thread_echoF, NULL) != 0){
     printf("[!] Error joining thread_echoF!\n");
     return -1;
   }
+  else{printf("Joined thread_echoF\n");}
   if(pthread_join(thread_echoB, NULL) != 0){
     printf("[!] Error joining thread_echoB!\n");
     return -1;
   }
+  else{printf("Joined thread_echoB\n");}
+  if(pthread_join(thread_button, NULL) != 0){
+    printf("[!] Error joining thread_button!\n");
+    return -1;
+  }
+  else{printf("Joined thread_button\n");}
 
-gpioTerminate();
+  gpioTerminate();
   return 0;
 }
 
@@ -210,7 +244,7 @@ int init_sensor(pthread_t* t, int* dest, int pin){
 
   genericstruct->data = dest;
   genericstruct->pin  = pin;
-  genericstruct->time = &microsec_remaining;
+  genericstruct->flag = &is_running;
 
   pthread_create(t, NULL, th_sensor, genericstruct);
 
@@ -230,7 +264,7 @@ int init_echo(pthread_t* t, double* dest, int pin_trigger, int pin_echo){
   genericstruct->data        = dest;
   genericstruct->pin_trigger = pin_trigger;
   genericstruct->pin_echo    = pin_echo;
-  genericstruct->time        = &microsec_remaining;
+  genericstruct->flag        = &is_running;
 
   pthread_create(t, NULL, th_echo, genericstruct);
 
@@ -240,9 +274,9 @@ int init_echo(pthread_t* t, double* dest, int pin_trigger, int pin_echo){
   return 0; //Success
 }
 
-int init_button(pthread_t* t, char* dest, int pin, char initial_state){
+int init_button(pthread_t* t, bool* dest, int pin, bool initial_state){
   #if(DEBUG_FLAG)
-  printf("init_button([%p], [%p], [%d], [%c])\n", t, dest, pin, initial_state);
+  printf("init_button([%p], [%p], [%d], [%d])\n", t, dest, pin, initial_state);
   #endif
 
   button_param_t* genericstruct = malloc(sizeof(button_param_t));
@@ -255,6 +289,8 @@ int init_button(pthread_t* t, char* dest, int pin, char initial_state){
   //Variable will be assigned to the inital state's value,
   //the thread will flip the value and terminate once the button is pressed
   *genericstruct->data = initial_state;
+
+  pthread_create(t, NULL, th_button, genericstruct);
 
   //Struct will be freed by the thread above
   genericstruct = NULL;

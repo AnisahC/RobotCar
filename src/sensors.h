@@ -15,6 +15,8 @@
  *
  * *************/
 
+#include <stdbool.h>
+
 /* DEFINES */
 //Period between displaying to terminal
 #define PERIOD_DISPLAY                100000
@@ -39,7 +41,7 @@
 typedef struct SENSOR_PARAM{
   int*        data;//address of data to change
   int         pin;//pin number to read from
-  useconds_t* time;//time to terminate all threads
+  bool*       flag;//time to terminate all threads
 } sensor_param_t;
 
 /* Struct to hold Echo Sensor Data */
@@ -47,14 +49,14 @@ typedef struct ECHO_PARAM{
   double*      data;//address of data to change
   int          pin_trigger;//pin number to trigger
   int          pin_echo;//pin number to read
-  useconds_t*  time;//time to terminate all threads
+  bool*        flag;//time to terminate all threads
 } echo_param_t;
 
 /* Struct to hold Button Data */
 typedef struct BUTTON_PARAM{
-  char*       data;//address of data to change
+  bool*       data;//address of data to change
   int         pin;//pin number to read from
-  char        initial_state;//What the field will be set to when thread is initialized, switched when button hit
+  bool        initial_state;//What the field will be set to when thread is initialized, switched when button hit
 } button_param_t;
 
 /* Prototypes for Sensor Data */
