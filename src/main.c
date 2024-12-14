@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <time.h>
+#include <math.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <pthread.h>
@@ -108,12 +109,14 @@ int setMotorSpeed(uint8_t dir, uint8_t speed){
   //Set Duty Cycle
     switch(dir){
       case FORWARD:
+      printf("going foward");
         PCA9685_SetLevel(LEFT_FORWARD, 1);
         PCA9685_SetLevel(LEFT_BACKWARD, 0);
         PCA9685_SetLevel(RIGHT_FORWARD, 1);
         PCA9685_SetLevel(RIGHT_REVERSE, 0);
         break;
       case REVERSE:
+        printf("going backward");
         PCA9685_SetLevel(LEFT_FORWARD, 0);
         PCA9685_SetLevel(LEFT_BACKWARD, 1);
         PCA9685_SetLevel(RIGHT_FORWARD, 0);
@@ -140,38 +143,30 @@ int setMotorSpeed(uint8_t dir, uint8_t speed){
 
 // TURN MOTOR
 int turnMotor(uint8_t dir) {
-   #if(DEBUG_FLAG)
-   printf("turning motor\n",dir);
-   #endif
 
   //Set Duty Cycle
   switch(dir) {
       case TURN_LEFT:
-        printf("inside left!\n");
+        printf("turning left!\n");
         PCA9685_SetLevel(LEFT_FORWARD, 0);
-        PCA9685_SetLevel(LEFT_BACKWARD, 0);
+        PCA9685_SetLevel(LEFT_BACKWARD, 1);
         PCA9685_SetLevel(RIGHT_FORWARD, 1);
         PCA9685_SetLevel(RIGHT_REVERSE, 0);
         break;
       case TURN_RIGHT:
-        printf("inside right!\n");
+        printf("turning right!\n");
         PCA9685_SetLevel(LEFT_FORWARD, 1);
         PCA9685_SetLevel(LEFT_BACKWARD, 0);
         PCA9685_SetLevel(RIGHT_FORWARD, 0);
-        PCA9685_SetLevel(RIGHT_REVERSE, 0);
+        PCA9685_SetLevel(RIGHT_REVERSE, 1);
         break;
       default:
         printf("[!] Invalid Direction!\n");
         return -1;
   }
-   if(dir == TURN_LEFT) {
-      printf("setting for left!\n");
-      PCA9685_SetPwmDutyCycle(RIGHT, 100);
-   } 
-   else if(dir == TURN_RIGHT) {
-      printf("setting duty cycle for right\n");
-      PCA9685_SetPwmDutyCycle(LEFT, 100);
-   }
+
+  PCA9685_SetPwmDutyCycle(RIGHT, 100);
+  PCA9685_SetPwmDutyCycle(LEFT, 100);
 
    return 1;
 }
@@ -241,14 +236,15 @@ int main(int argc, char* agv[]){
     }
     gpioDelay(20000);
   }
+  signal(SIGTSTP,handleStop);
 
   gpioDelay(20000);
   //loop while time is not
   while(looping){//off line
-    if (signal(SIGTSTP,handleStop) == SIG_ERR){
-      looping = 0;
-      break;
-    }
+    // if (signal(SIGTSTP,handleStop) == SIG_ERR){
+    //   looping = 0;
+    //   break;
+    // }
     printf("IN THE LOOP------------------\n");
     //usleep(1000*1000);
 
@@ -289,6 +285,7 @@ int main(int argc, char* agv[]){
         continue;
       } */
       if(data_lineM != 0){
+        setMotorSpeed(FORWARD, 100);
         //printf("continue forward\n");
         //continue;
       }
@@ -306,14 +303,57 @@ int main(int argc, char* agv[]){
       if(data_lineIR != 0){
         direction += 0.25;
       }
-      if(direction == 0 && data_lineR == 1){
-        //turn left
-      }
+      // if(direction == 0 && data_lineR == 1){
+      //   //turn left
+      //   direction = -3;
+      // }
       printf("L: %d | IL: %d | M: %d | IR: %d | R: %d\n",data_lineL,data_lineIL,data_lineM,data_lineIR,data_lineR);
       printf("direction : %lf\n",direction);
     }
-    gpioDelay(120000);
+
+    if(direction == 0) {
+      if (data_lineIL == 1 || data_lineIR == 1) {
+        // forward
+        setMotorSpeed(FORWARD, 10);
+      }
+    } else if(direction < 0) {
+      turnMotor(TURN_LEFT);
+      if(direction == -1) {
+        gpioDelay(10000);
+      } else {
+        gpioDelay(500);
+      }
+    } else if(direction > 0) {
+      turnMotor(TURN_RIGHT);
+      if(direction == 1) {
+        gpioDelay(10000);
+      } else {
+        gpioDelay(500);
+      }
+    }
+
+    if(data_lineR !=1 && data_lineM != 1 && data_lineL != 1 && data_lineIL != 1 && data_lineIR != 1) {
+      setMotorSpeed(REVERSE, 15);
+    }
+
+
+
+  //   if(direction < 0){
+  //     //go left
+  //     turnMotor(TURN_LEFT);
+  //   }else if (abs(direction) >= 1) {
+  //     usleep(10000000);
+  //   }else if(direction > 0){
+  //     //go right
+  //     turnMotor(TURN_RIGHT);
+  //   }else if(abs(direction) >= 0.25) {
+  //     gpioDelay(50000);
+  //   }else{
+  //     setMotorSpeed(FORWARD, 50);
+  //   }
+    gpioDelay(100000);
   }
+  
   
   microsec_remaining = 0;
 
@@ -343,6 +383,7 @@ int main(int argc, char* agv[]){
 
   gpioTerminate();
   return 0;
+  
 }
 
 /* Thread Function Implementations */
