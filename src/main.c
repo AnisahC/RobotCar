@@ -32,6 +32,9 @@ int init_sensor(pthread_t* t, int*    dest, int pin);
 int init_echo  (pthread_t* t, double* dest, int pin_trigger, int  pin_echo);
 int init_button(pthread_t* t, bool*   dest, int pin,         bool initial_status);
 
+//Behavior prototypes
+int avoid_obstacle();
+
 #include "PCA9685.h"
 
 #define DEBUG_FLAG 1
@@ -467,6 +470,38 @@ int init_button(pthread_t* t, bool* dest, int pin, bool initial_state){
 
   //Struct will be freed by the thread above
   genericstruct = NULL;
+
+  return 0;
+}
+
+
+/*  Behavior Functions   */
+
+int avoid_obstacle(){
+
+  //Turn left immediately, stop when back sensor sees object
+  while(!(data_echoB > MIN_DISTANCE && data_echoB < MAX_DISTANCE)){
+    printf("Initial left turn.\n");
+  }
+
+  //While no line is found...
+  while(data_lineM != 0){
+
+    //Go forward when back sensor sees object
+    if(data_echoB > MIN_DISTANCE && data_echoB < MAX_DISTANCE){
+
+      printf("Go Forward!\n");
+    }
+    else{
+      printf("Turn Right!\n");
+    }
+  }
+
+  //When a line is found, drive until the left sensor sees it
+  while(data_lineL != 0){
+    printf("Found Line! GO FORWARD!\n");
+    //Don't we need to turn left here?
+  }
 
   return 0;
 }
