@@ -123,7 +123,7 @@ void* th_echo(void* arg){
       //printf("Finding start time...     ");
       time_began = clock();
       //Loop until signal ends (MANUALLY BREAK)
-      while (gpioRead(pin_echo) == 0 && *time_main > 0) {
+      while (gpioRead(pin_echo) == 0 && *flag) {
          if (clock() - time_began > MAX_TIME) {
           //printf("Signal out of range\n");
           break;
@@ -133,7 +133,7 @@ void* th_echo(void* arg){
       
       //printf("Start time found\n");
       //printf("Finding end time...       ");
-      while(gpioRead(pin_echo) == 1 && *time_main > 0) {
+      while(gpioRead(pin_echo) == 1 && *flag) {
         time_end = clock();
         if (time_end - time_began > MAX_TIME) {
           //printf("Signal out of range\n");

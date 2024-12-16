@@ -260,14 +260,6 @@ int main(int argc, char* agv[]){
       break;
     }
 
-    if(gpioRead(PIN_BUTTON) > PI_LOW){
-      printf("[TERMINATE] Button Pressed\n");
-      stopMotor();
-      gpioTerminate();
-      looping = 0;
-      break;
-    }
-
     if(turning){
       printf("Inside Turning\n");
       
@@ -372,6 +364,8 @@ int main(int argc, char* agv[]){
 
   // STEP 3: TERMINATE
   printf("Terminating program...\n");
+
+  setMotorSpeed(FORWARD, 0);
 
   if(pthread_join(thread_lineL, NULL) != 0){
     printf("[!] Error joining thread_lineL!\n");
