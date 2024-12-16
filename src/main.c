@@ -43,7 +43,7 @@ int init_button(pthread_t* t, bool*   dest, int pin,         bool initial_status
 #define PIN_SENSOR_ECHO_F_ECHO     20
 #define PIN_SENSOR_ECHO_B_ECHO     23
 
-#define PIN_BUTTON                 18
+#define PIN_BUTTON                 25
 
 #define MICROSECONDS_UNTIL_TERMINATE 4000000
 #define PERIOD_DISPLAY                100000
