@@ -15,6 +15,8 @@
  *
  * *************/
 
+#include <stdbool.h>
+
 /* DEFINES */
 //Period between displaying to terminal
 #define PERIOD_DISPLAY                100000
@@ -33,6 +35,9 @@
 #define MODE_IN   0
 #define MODE_OUT  1
 
+#define STATE_ON  1
+#define STATE_OFF 0
+
 /* Struct to hold params for most sensors (1 or 0) */
 //Note that this is intended to be malloc'd as a whole struct,
 //Each function will take in a SINGLE memory address pointer
@@ -41,7 +46,7 @@
 typedef struct SENSOR_PARAM{
   int*        data;//address of data to change
   int         pin;//pin number to read from
-  useconds_t* time;//time to terminate all threads
+  bool*       flag;//time to terminate all threads
 } sensor_param_t;
 
 /* Struct to hold Echo Sensor Data */
@@ -49,9 +54,17 @@ typedef struct ECHO_PARAM{
   double*      data;//address of data to change
   int          pin_trigger;//pin number to trigger
   int          pin_echo;//pin number to read
-  useconds_t*  time;//time to terminate all threads
+  bool*        flag;//time to terminate all threads
 } echo_param_t;
+
+/* Struct to hold Button Data */
+typedef struct BUTTON_PARAM{
+  bool*       data;//address of data to change
+  int         pin;//pin number to read from
+  bool        initial_state;//What the field will be set to when thread is initialized, switched when button hit
+} button_param_t;
 
 /* Prototypes for Sensor Data */
 void* th_sensor    (void* arg);//Sensors that simply read 1 or 0
 void* th_echo      (void* arg);//Echo Sensor specifically
+void* th_button    (void* arg);//Button to HALT program
