@@ -272,6 +272,7 @@ void* th_rgb(void* arg) {
 
     if ((rgb_reading->red > 10) && (6 > rgb_reading->green) && (6 > rgb_reading->blue)) {
       *rgb_red = 1;
+      *flag = 0;
     } else {*rgb_red = 0;}
     
     #if(DEBUG_FLAG)

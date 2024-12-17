@@ -31,6 +31,7 @@
 int init_sensor(pthread_t* t, int*    dest, int pin);
 int init_echo  (pthread_t* t, double* dest, int pin_trigger, int  pin_echo);
 int init_button(pthread_t* t, bool*   dest, int pin,         bool initial_status);
+int init_rgb   (pthread_t* t, int* rgb_red);
 
 //Behavior prototypes
 int avoid_obstacle();
@@ -133,7 +134,8 @@ int main(int argc, char* agv[]){
             thread_lineIL,
             thread_echoF,
             thread_echoB,
-            thread_button;
+            thread_button,
+            thread_rgb;
 
   //Initialize button that will start the program
   if( init_button(&thread_button, &is_running, PIN_BUTTON, false) < 0){
@@ -167,7 +169,8 @@ int main(int argc, char* agv[]){
       (init_sensor(&thread_lineIR, &data_lineIR, PIN_SENSOR_LINE_INNER_R) < 0) ||
       (init_sensor(&thread_lineIL, &data_lineIL, PIN_SENSOR_LINE_INNER_L) < 0) ||
       (init_echo  (&thread_echoF, &data_echoF, PIN_SENSOR_ECHO_F_TRIGGER,  PIN_SENSOR_ECHO_F_ECHO) < 0) ||
-      (init_echo  (&thread_echoB, &data_echoB, PIN_SENSOR_ECHO_B_TRIGGER,  PIN_SENSOR_ECHO_B_ECHO) < 0)){
+      (init_echo  (&thread_echoB, &data_echoB, PIN_SENSOR_ECHO_B_TRIGGER,  PIN_SENSOR_ECHO_B_ECHO) < 0) ||
+      (init_rgb   (&thread_rgb, &data_rgb) < 0)){
 
      printf("[!] FAILED TO INITIALIZE SENSORS!\n");
      return -1;
@@ -264,6 +267,11 @@ int main(int argc, char* agv[]){
     return -1;
   }
   else{printf("Joined thread_button\n");}
+  if(pthread_join(thread_rgb, NULL) != 0){
+    printf("[!] Error joining thread_rgb!\n");
+    return -1;
+  }
+  else{printf("Joined thread_rgb\n");}
 
   gpioTerminate();
   return 0;
