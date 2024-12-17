@@ -53,7 +53,7 @@ int avoid_obstacle();
 #define REVERSE 0
 
 #define TURN_LEFT  0
-#define TURN_RIGHT 1 
+#define TURN_RIGHT 1
 
 #define ON_THE_LINE  1
 #define OFF_THE_LINE 0
@@ -95,94 +95,6 @@ double          data_echoB = -1;
 int turning = 0;
 int looping = 1;
 int found_obstacle = 0;
-
-void handleStop(int signal){
-  printf("Stopped Loop\n");
-  looping = 0;
-}
-
-// SPEED AND DIRECTION
-int setMotorSpeed(uint8_t dir, uint8_t speed){
-
-  #if(DEBUG_FLAG)
-    printf("setMotorSpeed(%d,%d)\n",dir, speed);
-    #endif
-
-  //Set Duty Cycle
-    switch(dir){
-      case FORWARD:
-      printf("going foward");
-        PCA9685_SetLevel(LEFT_FORWARD, 1);
-        PCA9685_SetLevel(LEFT_BACKWARD, 0);
-        PCA9685_SetLevel(RIGHT_FORWARD, 1);
-        PCA9685_SetLevel(RIGHT_REVERSE, 0);
-        break;
-      case REVERSE:
-        printf("going backward");
-        PCA9685_SetLevel(LEFT_FORWARD, 0);
-        PCA9685_SetLevel(LEFT_BACKWARD, 1);
-        PCA9685_SetLevel(RIGHT_FORWARD, 0);
-        PCA9685_SetLevel(RIGHT_REVERSE, 1);
-        break;
-      default:
-         printf("[!] Invalid Direction!\n");
-         return -1;
-    }
-   //This gives a "jolt" to allow the motor to have momentum to spin at a slower speed
-   for(int i=100; i>speed; i--){
-      PCA9685_SetPwmDutyCycle(LEFT, i);
-      PCA9685_SetPwmDutyCycle(RIGHT, i);
-      usleep(1000);
-   }
-   //Settles on final speed
-   PCA9685_SetPwmDutyCycle(LEFT, speed);
-   PCA9685_SetPwmDutyCycle(RIGHT, speed);
-
-   //Success
-   return speed;
-
-}
-
-// TURN MOTOR
-int turnMotor(uint8_t dir) {
-
-  //Set Duty Cycle
-  switch(dir) {
-      case TURN_LEFT:
-        printf("turning left!\n");
-        PCA9685_SetLevel(LEFT_FORWARD, 0);
-        PCA9685_SetLevel(LEFT_BACKWARD, 1);
-        PCA9685_SetLevel(RIGHT_FORWARD, 1);
-        PCA9685_SetLevel(RIGHT_REVERSE, 0);
-        break;
-      case TURN_RIGHT:
-        printf("turning right!\n");
-
-        PCA9685_SetLevel(LEFT_FORWARD, 1);
-        PCA9685_SetLevel(LEFT_BACKWARD, 0);
-        PCA9685_SetLevel(RIGHT_FORWARD, 0);
-        PCA9685_SetLevel(RIGHT_REVERSE, 1);
-        break;
-      default:
-        printf("[!] Invalid Direction!\n");
-        return -1;
-  }
-
-  PCA9685_SetPwmDutyCycle(RIGHT, 100);
-  PCA9685_SetPwmDutyCycle(LEFT, 100);
-
-   return 1;
-}
-
-// STOP MOTOR
-int stopMotor(){
-
-  PCA9685_SetPwmDutyCycle(LEFT, 0);
-  PCA9685_SetPwmDutyCycle(RIGHT, 0);
-
-  return 0;
-}
-
 
 /* MAIN METHOD */
 int main(int argc, char* agv[]){
@@ -260,26 +172,17 @@ int main(int argc, char* agv[]){
   }
 
 
-  
-  gpioDelay(20000);
   //loop while time is not
   while(is_running){//off line
-    if (signal(SIGTSTP,handleStop) == SIG_ERR){
-      looping = 0;
-      break;
-    }
-    
-    direction = 0; 
+
+    direction = 0;
     if (data_echoF < 25){
       printf("[ECHO] obstacle detected %f\n",data_echoF);
       usleep(200000);
       avoid_obstacle();
       continue;
-    } 
+    }
     if(data_lineM != 0){
-      //setMotorSpeed(FORWARD, 100);
-      //printf("continue forward\n");
-      //continue;
       tally++;
     }
     if(data_lineR != 0){
@@ -288,67 +191,39 @@ int main(int argc, char* agv[]){
       tally++;
     }
     if(data_lineL != 0){
-      direction -=1;
+      direction -= 1;
       tally++;
       //printf("left sensor, turn right\n");
     }
     if(data_lineIL != 0){
-      direction -=.8;
+      direction -= 0.8;
       tally++;
     }
     if(data_lineIR != 0){
       direction += 0.8;
       tally++;
     }
-    // if(direction == 0 && data_lineR == 1){
-    //   //turn left
-    //   direction = -3;
-    // }
-    printf("L: %d | IL: %d | M: %d | IR: %d | R: %d\n",data_lineL,data_lineIL,data_lineM,data_lineIR,data_lineR);
-    printf("direction : %lf\n",direction);
-    
 
     motor_steer(direction / tally, 80, FORWARD);
-
     tally = 0;
 
-    
-    if(data_lineR !=ON_THE_LINE && data_lineM != ON_THE_LINE && 
-       data_lineL != ON_THE_LINE && data_lineIL != ON_THE_LINE && 
+
+    if(data_lineR !=ON_THE_LINE && data_lineM != ON_THE_LINE &&
+       data_lineL != ON_THE_LINE && data_lineIL != ON_THE_LINE &&
        data_lineIR != ON_THE_LINE) {
-      //setMotorSpeed(REVERSE, 15);
       motor_stop();
       usleep(250 * 1000);
       motor_steer(direction / tally, 80, REVERSE);
-      //usleep(500 * 1000);
     }
-    
-
-
-
-  //   if(direction < 0){
-  //     //go left
-  //     turnMotor(TURN_LEFT);
-  //   }else if (abs(direction) >= 1) {
-  //     usleep(10000000);
-  //   }else if(direction > 0){
-  //     //go right
-  //     turnMotor(TURN_RIGHT);
-  //   }else if(abs(direction) >= 0.25) {
-  //     gpioDelay(50000);
-  //   }else{
-  //     setMotorSpeed(FORWARD, 50);
-  //   }
     gpioDelay(PERIOD_DISPLAY);
   }
-  
-  
+
   microsec_remaining = 0;
 
   // STEP 3: TERMINATE
   printf("Terminating program...\n");
 
-  setMotorSpeed(FORWARD, 0);
+  motor_stop();
 
   if(pthread_join(thread_lineL, NULL) != 0){
     printf("[!] Error joining thread_lineL!\n");
@@ -383,7 +258,6 @@ int main(int argc, char* agv[]){
 
   gpioTerminate();
   return 0;
-  
 }
 
 /* Thread Function Implementations */
@@ -463,11 +337,11 @@ int avoid_obstacle(){
   while((!(data_echoB > MIN_DISTANCE && data_echoB < 50)) && is_running){
     printf("Initial left turn.\n");
     printf("Butt sensor detects: %f\n", data_echoB);
-    turnMotor(TURN_LEFT);
+    motor_pivot(TURN_LEFT);
   }
   printf("DIFFERENT Butt sensor detects: %f\n", data_echoB);
 
-  stopMotor();
+  motor_stop();
 
   //While no line is found...
   while((data_lineM == OFF_THE_LINE) && is_running){
@@ -476,21 +350,21 @@ int avoid_obstacle(){
     if(data_echoB > MIN_DISTANCE && data_echoB < 50){
 
       printf("Go Forward!\n");
-      setMotorSpeed(FORWARD, 50);
+      motor_set_speed(FORWARD, 50);
     }
     else{
       printf("Turn Right!\n");
-      turnMotor(TURN_RIGHT);
+      motor_pivot(TURN_RIGHT);
     }
   }
 
   //When a line is found, drive until the left sensor sees it
   while((data_lineL == ON_THE_LINE) && is_running){
     printf("Found Line! Go Left!\n");
-    turnMotor(TURN_LEFT);
+    motor_pivot(TURN_LEFT);
   }
 
-  stopMotor();
+  motor_stop();
 
   return 0;
 }
