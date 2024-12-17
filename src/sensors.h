@@ -64,7 +64,17 @@ typedef struct BUTTON_PARAM{
   bool        initial_state;//What the field will be set to when thread is initialized, switched when button hit
 } button_param_t;
 
+/* Struct to hold RGB Sensor Data */
+typedef struct RGB_PARAM{
+  //char* color;          // RBG Color read. Red str is what matters.
+  //int i2c_address;      // I2C address of the RGB sensor
+  //int i2c_bus;          // I2C bus to use
+  int* rgb_red;   // check if rgb red is high enough (0 or 1)
+  bool* flag;     // Pointer to shared timer
+} rgb_param_t;
+
 /* Prototypes for Sensor Data */
 void* th_sensor    (void* arg);//Sensors that simply read 1 or 0
 void* th_echo      (void* arg);//Echo Sensor specifically
 void* th_button    (void* arg);//Button to HALT program
+void* th_rgb       (void* arg);//RBG Sensor thread

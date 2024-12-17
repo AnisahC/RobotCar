@@ -25,6 +25,7 @@
 
 /* Prototype Signatures for Sensors */
 #include "sensors.h"
+#include "RGB_Sensor.h"
 
 #define DEBUG_FLAG 1
 
@@ -231,5 +232,70 @@ void* th_button(void* arg){
   #if(DEBUG_FLAG)
   printf("th_button(%p) TERMINATE\n", arg);
   #endif
+  return NULL;
+}
+
+void* th_rgb(void* arg) {
+
+  #if(DEBUG_FLAG)
+  printf("th_rgb(%p) START\n", arg);
+  #endif
+
+  //Extract information from passed struct
+  rgb_param_t* params = (rgb_param_t*) arg;
+  //char* color = params->color;
+  //int i2c_address = params->i2c_address;
+  //int i2c_bus = params->i2c_bus;
+  int* rgb_red = params->rgb_red;
+  bool* flag = params->flag;
+
+  //FREE STRUCT
+  free(arg);
+  arg = NULL;
+  
+  // Initialize Sensor
+  if(TCS34725_init() < 0){
+    printf("[!] RBG SENSOR INIT FAILED!\n");
+    return NULL;
+  }
+
+  RGB_Val* rgb_reading = (RGB_Val*) malloc(sizeof(RGB_Val));
+  
+  //Sensor Reading Main Loop
+  while (*flag) {
+
+    // Read RGB data from the sensor
+    getRGB(rgb_reading);
+    
+    printf("The color is: %s with confidence %f\n", 
+            getColorName(rgb_reading), getConfidence(rgb_reading));
+
+    if ((rgb_reading->red > 10) && (6 > rgb_reading->green) && (6 > rgb_reading->blue)) {
+      *rgb_red = 1;
+    } else {*rgb_red = 0;}
+    
+    #if(DEBUG_FLAG)
+    printf("RGB: %u, %u, %u HEX:#%02X%02X%02X\n",
+            rgb_reading->red, rgb_reading->green, rgb_reading->blue,
+            rgb_reading->red, rgb_reading->green, rgb_reading->blue);        
+    #endif
+
+    // Wait before the next read
+    if (usleep(PERIOD_SCAN) != 0) {
+        printf("[!] usleep failed!\n");
+        TCS34725_Close();
+        free(rgb_reading);
+        return NULL;
+    }
+  }
+  
+  // Close I2C connection
+  TCS34725_Close();
+  free(rgb_reading);
+
+  #if(DEBUG_FLAG)
+  printf("th_rgb(%p) TERMINATE\n", arg);
+  #endif
+
   return NULL;
 }

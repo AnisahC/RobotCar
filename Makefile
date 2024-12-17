@@ -57,10 +57,11 @@ build:
 	gcc -D USE_DEV_LIB  -c  lib/Config/dev_hardware_i2c.c -o bin/dev_hardware_i2c.o  -I lib/Config
 	gcc -D USE_DEV_LIB  -c  lib/Config/sysfs_gpio.c -o bin/sysfs_gpio.o  -I lib/Config
 	gcc -D USE_DEV_LIB  -c  lib/PCA9685/PCA9685.c -o bin/PCA9685.o  -I lib/Config
-	gcc -D USE_DEV_LIB  -c  src/sensors.c -o bin/sensors.o
+	gcc -D USE_DEV_LIB  -c  src/sensors.c -o bin/sensors.o -I lib/RGB
+	gcc -D USE_DEV_LIB  -c  lib/RGB/RGB_Sensor.c -o bin/RGB_Sensor.o  -I lib/Config
 	gcc -D USE_DEV_LIB  -c  src/motors.c  -o bin/motors.o  -I lib/Config -I lib/PCA9685
-	gcc -D USE_DEV_LIB  -c  src/main.c -o bin/main.o -lpthread -lpigpio -lrt -I lib/Config -I lib/PCA9685/
-	gcc -D USE_DEV_LIB      bin/main.o bin/sensors.o bin/motors.o bin/DEV_Config.o bin/dev_hardware_SPI.o bin/dev_hardware_i2c.o bin/sysfs_gpio.o bin/PCA9685.o -o motor_control  -lm -lpigpio -lrt -lpthread
+	gcc -D USE_DEV_LIB  -c  src/main.c -o bin/main.o -lpthread -lpigpio -lrt -I lib/Config -I lib/PCA9685/ lib/RGB/
+	gcc -D USE_DEV_LIB      bin/main.o bin/sensors.o bin/motors.o bin/DEV_Config.o bin/dev_hardware_SPI.o bin/dev_hardware_i2c.o bin/sysfs_gpio.o bin/PCA9685.o bin/RGB_Sensor.o -o motor_control  -lm -lpigpio -lrt -lpthread
 
 clean:
 	rm $(DIR_BIN)/*.* 

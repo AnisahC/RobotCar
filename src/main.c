@@ -89,6 +89,8 @@ int             data_lineM = -1;
 int             data_lineIR = -1;
 int             data_lineIL = -1;
 
+int            data_rgb = 0;
+
 double          data_echoF = -1;
 double          data_echoB = -1;
 
@@ -176,6 +178,13 @@ int main(int argc, char* agv[]){
   while(is_running){//off line
 
     direction = 0;
+    if (data_rgb == 1) {
+        //RGB found Red
+        printf("RED: [%p]\n", data_rgb);
+        printf("[TERMINATE] RGB found Red\n");
+        looping = 0;
+        break;
+    }
     if (data_echoF < 25){
       printf("[ECHO] obstacle detected %f\n",data_echoF);
       usleep(200000);
@@ -328,6 +337,23 @@ int init_button(pthread_t* t, bool* dest, int pin, bool initial_state){
   return 0;
 }
 
+int init_rgb(pthread_t* t, int* rgb_red) {
+  #if(DEBUG_FLAG)
+  printf("init_rgb([%p], [%d])\n", t, rgb_red);
+  #endif
+
+  rgb_param_t* genericstruct = malloc(sizeof(rgb_param_t));
+
+  genericstruct->rgb_red = rgb_red;
+  genericstruct->flag = &is_running;
+
+  pthread_create(t, NULL, th_rgb, genericstruct);
+
+  //Struct will be freed by the thread above
+  genericstruct = NULL;
+
+  return 0; //Success
+}
 
 /*  Behavior Functions   */
 
