@@ -179,7 +179,6 @@ int main(int argc, char* agv[]){
 
   //loop while time is not
   while(is_running){//off line
-
     direction = 0;
     if (data_rgb == 1) {
         //RGB found Red
@@ -188,8 +187,9 @@ int main(int argc, char* agv[]){
         looping = 0;
         break;
     }
-    if (data_echoF < 40){
+    if (data_echoF < 35 && data_echoF > 0){
       printf("[ECHO] obstacle detected %f\n",data_echoF);
+      motor_stop();
       usleep(200000);
       avoid_obstacle();
       continue;
@@ -368,7 +368,7 @@ int init_rgb(pthread_t* t, int* rgb_red) {
 int avoid_obstacle(){
 
   //Turn left immediately, stop when back sensor sees object
-  while((!(data_echoB > MIN_DISTANCE && data_echoB < 50)) && is_running){
+  while((!(data_echoB > MIN_DISTANCE && data_echoB < 40)) && is_running){
     printf("Initial left turn.\n");
     printf("Butt sensor detects: %f\n", data_echoB);
     motor_pivot(TURN_LEFT);
@@ -376,19 +376,30 @@ int avoid_obstacle(){
   printf("DIFFERENT Butt sensor detects: %f\n", data_echoB);
 
   motor_stop();
-
+  usleep(1*1000*1000);
+  motor_set_speed(FORWARD, 50);
+  usleep(100*1000);
   //While no line is found...
-  while((data_lineM == OFF_THE_LINE) && is_running){
-
+  while((data_lineM + data_lineIL + data_lineIR + data_lineL + data_lineR) < 3 && is_running){
     //Go forward when back sensor sees object
-    if(data_echoB > MIN_DISTANCE && data_echoB < 50){
-
+    if((data_echoB > MIN_DISTANCE && data_echoB < 50)){
       printf("Go Forward!\n");
       motor_set_speed(FORWARD, 50);
+      usleep(50 * 1000);
     }
     else{
       printf("Turn Right!\n");
       motor_pivot(TURN_RIGHT);
+      usleep(750 * 1000);
+      motor_set_speed(FORWARD, 50);
+      for (int i=0; i < 200; i++) {
+        if (!((data_lineM + data_lineIL + data_lineIR + data_lineL + data_lineR) < 3 && is_running)) {
+          i = 201;
+          printf("======HIT LINE WHILE TURNING========\n");
+          continue;
+        }
+        usleep(10 * 1000);
+      }
     }
   }
 
