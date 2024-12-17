@@ -70,6 +70,7 @@ typedef struct RGB_PARAM{
   //int i2c_address;      // I2C address of the RGB sensor
   //int i2c_bus;          // I2C bus to use
   int* rgb_red;   // check if rgb red is high enough (0 or 1)
+  int* line_data;
   bool* flag;     // Pointer to shared timer
 } rgb_param_t;
 
