@@ -53,6 +53,9 @@ int avoid_obstacle();
 
 #define TURN_LEFT  0
 #define TURN_RIGHT 1 
+
+#define ON_THE_LINE  1
+#define OFF_THE_LINE 0
 //-----------------------------------------
 
 #define PIN_SENSOR_LINE_R          17
@@ -255,6 +258,7 @@ int main(int argc, char* agv[]){
   }
 
 
+  
   gpioDelay(20000);
   //loop while time is not
   while(is_running){//off line
@@ -262,62 +266,40 @@ int main(int argc, char* agv[]){
       looping = 0;
       break;
     }
-
-    if(turning){
-      printf("Inside Turning\n");
-      
-      //printf("Distance is: [%f]\n", data_echoF);
-      if ((found_obstacle != 1) && (data_echoB*100 > MIN_DISTANCE) && data_echoB*100 < MAX_DISTANCE){
-        found_obstacle = 1;
-      }
-      if(found_obstacle != 1){
-        //printf("Continue 0 point turn\n");
-        continue;
-      }
-      if (found_obstacle && ((data_echoB*100 < MIN_DISTANCE) && data_echoB*100 > MAX_DISTANCE)){
-        //printf("[ECHO] past obstacle, go straight \n");
-        usleep(200000);
-        turning = 0;
-        found_obstacle = 0;
-        continue;
-      }
-      if(data_lineM != 0){
-        printf("found line while turning, turn opposite of sensor side\n");
-      }
-    }else{//on line
-      direction = 0; /*
-      if (data_echoF > 100){
-        printf("[ECHO] obstacle detected %f\n",data_echoF);
-        usleep(200000);
-        turning = 1;
-        continue;
-      } */
-      if(data_lineM != 0){
-        setMotorSpeed(FORWARD, 100);
-        //printf("continue forward\n");
-        //continue;
-      }
-      if(data_lineR != 0){
-        //printf("right sensor, turn left\n");
-        direction += 1;
-      }
-      if(data_lineL != 0){
-        direction -=1;
-        //printf("left sensor, turn right\n");
-      }
-      if(data_lineIL != 0){
-        direction -=.25;
-      }
-      if(data_lineIR != 0){
-        direction += 0.25;
-      }
-      // if(direction == 0 && data_lineR == 1){
-      //   //turn left
-      //   direction = -3;
-      // }
-      printf("L: %d | IL: %d | M: %d | IR: %d | R: %d\n",data_lineL,data_lineIL,data_lineM,data_lineIR,data_lineR);
-      printf("direction : %lf\n",direction);
+    
+    direction = 0; 
+    if (data_echoF < 25){
+      printf("[ECHO] obstacle detected %f\n",data_echoF);
+      usleep(200000);
+      avoid_obstacle();
+      continue;
+    } 
+    if(data_lineM != 0){
+      setMotorSpeed(FORWARD, 100);
+      //printf("continue forward\n");
+      //continue;
     }
+    if(data_lineR != 0){
+      //printf("right sensor, turn left\n");
+      direction += 1;
+    }
+    if(data_lineL != 0){
+      direction -=1;
+      //printf("left sensor, turn right\n");
+    }
+    if(data_lineIL != 0){
+      direction -=.25;
+    }
+    if(data_lineIR != 0){
+      direction += 0.25;
+    }
+    // if(direction == 0 && data_lineR == 1){
+    //   //turn left
+    //   direction = -3;
+    // }
+    printf("L: %d | IL: %d | M: %d | IR: %d | R: %d\n",data_lineL,data_lineIL,data_lineM,data_lineIR,data_lineR);
+    printf("direction : %lf\n",direction);
+    
 
     if(direction == 0) {
       if (data_lineIL == 1 || data_lineIR == 1) {
@@ -480,28 +462,37 @@ int init_button(pthread_t* t, bool* dest, int pin, bool initial_state){
 int avoid_obstacle(){
 
   //Turn left immediately, stop when back sensor sees object
-  while(!(data_echoB > MIN_DISTANCE && data_echoB < MAX_DISTANCE)){
+  while((!(data_echoB > MIN_DISTANCE && data_echoB < 50)) && is_running){
     printf("Initial left turn.\n");
+    printf("Butt sensor detects: %f\n", data_echoB);
+    turnMotor(TURN_LEFT);
   }
+  printf("DIFFERENT Butt sensor detects: %f\n", data_echoB);
+
+  stopMotor();
 
   //While no line is found...
-  while(data_lineM != 0){
+  while((data_lineM == OFF_THE_LINE) && is_running){
 
     //Go forward when back sensor sees object
-    if(data_echoB > MIN_DISTANCE && data_echoB < MAX_DISTANCE){
+    if(data_echoB > MIN_DISTANCE && data_echoB < 50){
 
       printf("Go Forward!\n");
+      setMotorSpeed(FORWARD, 50);
     }
     else{
       printf("Turn Right!\n");
+      turnMotor(TURN_RIGHT);
     }
   }
 
   //When a line is found, drive until the left sensor sees it
-  while(data_lineL != 0){
-    printf("Found Line! GO FORWARD!\n");
-    //Don't we need to turn left here?
+  while((data_lineL == ON_THE_LINE) && is_running){
+    printf("Found Line! Go Left!\n");
+    turnMotor(TURN_LEFT);
   }
+
+  stopMotor();
 
   return 0;
 }
