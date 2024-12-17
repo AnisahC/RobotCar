@@ -270,7 +270,7 @@ void* th_rgb(void* arg) {
     printf("The color is: %s with confidence %f\n", 
             getColorName(rgb_reading), getConfidence(rgb_reading));
 
-    if ((rgb_reading->red > 10) && (6 > rgb_reading->green) && (6 > rgb_reading->blue)) {
+    if ((rgb_reading->red > 10) && (9 > rgb_reading->green) && (9 > rgb_reading->blue)) {
       *rgb_red = 1;
       *flag = 0;
     } else {*rgb_red = 0;}

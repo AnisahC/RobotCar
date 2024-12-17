@@ -188,7 +188,7 @@ int main(int argc, char* agv[]){
         looping = 0;
         break;
     }
-    if (data_echoF < 25){
+    if (data_echoF < 40){
       printf("[ECHO] obstacle detected %f\n",data_echoF);
       usleep(200000);
       avoid_obstacle();
