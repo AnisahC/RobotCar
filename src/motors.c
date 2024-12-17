@@ -34,8 +34,11 @@ int motor_set_speed(uint8_t dir, uint8_t speed){
 
   }
 
-  if(speed >= JOLT_SPEED)//If no jolt needed, return speed
-    {return speed;}
+  if(speed >= JOLT_SPEED){//If no jolt needed, return speed
+    PCA9685_SetPwmDutyCycle(LEFT,  speed);
+    PCA9685_SetPwmDutyCycle(RIGHT, speed);
+    return speed;
+  }
   else{//"Jolt" the motor by starting at a higher speed if the targeted speed is really low
 
     //This makes the time spent "jolting" consistent, entire process should be voer the course of a tenth of a second
@@ -104,6 +107,52 @@ int motor_steer(double dir){
   else if(dir < -1.0)
     {dir = -1.0;}
 
+  int speed = 70;
+
+  int speed_left;
+  int speed_right;
+  
+  
+  if(speed >= JOLT_SPEED){//If no jolt needed
+    if(dir <= 0.0){
+      speed_left = (1 - (0.5 * abs(dir))) * speed;
+      speed_right = speed;
+    }
+    else{
+      speed_left = speed;
+      speed_right = (1 - (0.5 * abs(dir))) * speed;
+    }
+
+    PCA9685_SetPwmDutyCycle(LEFT,  speed_left);
+    PCA9685_SetPwmDutyCycle(RIGHT, speed_right);
+    
+    return speed;
+  }
+  else{//"Jolt" the motor by starting at a higher speed if the targeted speed is really low
+
+    //This makes the time spent "jolting" consistent, entire process should be voer the course of a tenth of a second
+    int delay_per = JOLT_DELAY / (JOLT_SPEED - speed);
+    for(int i=JOLT_SPEED; i>speed; i--){
+
+      if(dir <= 0.0){
+        speed_left = (1 - (0.5 * abs(dir))) * i;
+        speed_right = i;
+      }
+      else{
+        speed_left = i;
+        speed_right = (1 - (0.5 * abs(dir))) * i;
+      }
+      
+      PCA9685_SetPwmDutyCycle(LEFT,  speed_left);
+      PCA9685_SetPwmDutyCycle(RIGHT, speed_right);
+      usleep(delay_per);
+    }
+
+    PCA9685_SetPwmDutyCycle(LEFT,  speed_left);
+    PCA9685_SetPwmDutyCycle(RIGHT, speed_right);
+    
+    return speed;
+  }
 
   return 0;
 }
