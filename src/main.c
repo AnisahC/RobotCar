@@ -220,6 +220,12 @@ int main(int argc, char* agv[]){
             thread_echoB,
             thread_button;
 
+  motor_steer(0.7);
+
+  usleep(1000000);
+
+  motor_stop();
+
   //Initialize button that will start the program
   if( init_button(&thread_button, &is_running, PIN_BUTTON, false) < 0){
     printf("[!] FAILED TO INITIALIZE BUTTON!\n");
