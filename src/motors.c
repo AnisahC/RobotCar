@@ -123,10 +123,10 @@ int motor_steer(double dir, int speed, int heading){
   }
 
   //Any input past the limits will be treated as it were at the limit
-  if(dir > 1.0)
-    {dir = 1.0;}
-  else if(dir < -1.0)
-    {dir = -1.0;}
+  if(dir  > 0.8)
+    {return motor_pivot(TURN_RIGHT);}
+  else if(dir < -0.8)
+    {return motor_pivot(TURN_LEFT);}
 
   if(speed > 100){
     speed = 100;
