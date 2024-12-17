@@ -187,6 +187,7 @@ int stopMotor(){
 /* MAIN METHOD */
 int main(int argc, char* agv[]){
   double direction = 0;
+  int tally = 0;
 
   // STEP 1: INITIALIZE
   printf("Initializing...\n");
@@ -219,12 +220,6 @@ int main(int argc, char* agv[]){
             thread_echoF,
             thread_echoB,
             thread_button;
-
-  motor_steer(0.7);
-
-  usleep(1000000);
-
-  motor_stop();
 
   //Initialize button that will start the program
   if( init_button(&thread_button, &is_running, PIN_BUTTON, false) < 0){
@@ -282,23 +277,28 @@ int main(int argc, char* agv[]){
       continue;
     } 
     if(data_lineM != 0){
-      setMotorSpeed(FORWARD, 100);
+      //setMotorSpeed(FORWARD, 100);
       //printf("continue forward\n");
       //continue;
+      tally++;
     }
     if(data_lineR != 0){
       //printf("right sensor, turn left\n");
       direction += 1;
+      tally++;
     }
     if(data_lineL != 0){
       direction -=1;
+      tally++;
       //printf("left sensor, turn right\n");
     }
     if(data_lineIL != 0){
-      direction -=.25;
+      direction -=.8;
+      tally++;
     }
     if(data_lineIR != 0){
-      direction += 0.25;
+      direction += 0.8;
+      tally++;
     }
     // if(direction == 0 && data_lineR == 1){
     //   //turn left
@@ -308,30 +308,21 @@ int main(int argc, char* agv[]){
     printf("direction : %lf\n",direction);
     
 
-    if(direction == 0) {
-      if (data_lineIL == 1 || data_lineIR == 1) {
-        // forward
-        setMotorSpeed(FORWARD, 10);
-      }
-    } else if(direction < 0) {
-      turnMotor(TURN_LEFT);
-      if(direction == -1) {
-        gpioDelay(10000);
-      } else {
-        gpioDelay(500);
-      }
-    } else if(direction > 0) {
-      turnMotor(TURN_RIGHT);
-      if(direction == 1) {
-        gpioDelay(10000);
-      } else {
-        gpioDelay(500);
-      }
-    }
+    motor_steer(direction / tally, 80, FORWARD);
 
-    if(data_lineR !=1 && data_lineM != 1 && data_lineL != 1 && data_lineIL != 1 && data_lineIR != 1) {
-      setMotorSpeed(REVERSE, 15);
+    tally = 0;
+
+    
+    if(data_lineR !=ON_THE_LINE && data_lineM != ON_THE_LINE && 
+       data_lineL != ON_THE_LINE && data_lineIL != ON_THE_LINE && 
+       data_lineIR != ON_THE_LINE) {
+      //setMotorSpeed(REVERSE, 15);
+      motor_stop();
+      usleep(250 * 1000);
+      motor_steer(direction / tally, 80, REVERSE);
+      //usleep(500 * 1000);
     }
+    
 
 
 

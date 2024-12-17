@@ -60,7 +60,7 @@ build:
 	gcc -D USE_DEV_LIB  -c  src/sensors.c -o bin/sensors.o
 	gcc -D USE_DEV_LIB  -c  src/motors.c  -o bin/motors.o  -I lib/Config -I lib/PCA9685
 	gcc -D USE_DEV_LIB  -c  src/main.c -o bin/main.o -lpthread -lpigpio -lrt -I lib/Config -I lib/PCA9685/
-	gcc -D USE_DEV_LIB      bin/main.o bin/sensors.o bin/DEV_Config.o bin/dev_hardware_SPI.o bin/dev_hardware_i2c.o bin/sysfs_gpio.o bin/PCA9685.o -o motor_control  -lm -lpigpio -lrt -lpthread
+	gcc -D USE_DEV_LIB      bin/main.o bin/sensors.o bin/motors.o bin/DEV_Config.o bin/dev_hardware_SPI.o bin/dev_hardware_i2c.o bin/sysfs_gpio.o bin/PCA9685.o -o motor_control  -lm -lpigpio -lrt -lpthread
 
 clean:
 	rm $(DIR_BIN)/*.* 

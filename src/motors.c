@@ -7,6 +7,7 @@
 #define DEBUG_FLAG 1
 #define JOLT_SPEED 50
 #define JOLT_DELAY 100000
+#define TURN_INTENSITY 1.0
 
 /* Basic Controls */
 int motor_set_speed(uint8_t dir, uint8_t speed){
@@ -96,10 +97,30 @@ int motor_pivot(uint8_t dir){
   return 0;
 }
 
-int motor_steer(double dir){
+int motor_steer(double dir, int speed, int heading){
   #if(DEBUG_FLAG)
   printf("motor_steer(%f)\n", dir);
   #endif
+
+  switch(heading){
+    case FORWARD:
+      PCA9685_SetLevel(LEFT_FORWARD,   1);
+      PCA9685_SetLevel(LEFT_REVERSE,   0);
+      PCA9685_SetLevel(RIGHT_FORWARD,  1);
+      PCA9685_SetLevel(RIGHT_REVERSE,  0);
+      break;
+    case REVERSE:
+      PCA9685_SetLevel(LEFT_FORWARD,   0);
+      PCA9685_SetLevel(LEFT_REVERSE,   1);
+      PCA9685_SetLevel(RIGHT_FORWARD,  0);
+      PCA9685_SetLevel(RIGHT_REVERSE,  1);
+      break;
+
+    default:
+      printf("Invalid Direction!\n");
+      return -1;
+
+  }
 
   //Any input past the limits will be treated as it were at the limit
   if(dir > 1.0)
@@ -107,7 +128,12 @@ int motor_steer(double dir){
   else if(dir < -1.0)
     {dir = -1.0;}
 
-  int speed = 70;
+  if(speed > 100){
+    speed = 100;
+  }
+  else if(speed < 0){
+    speed = 0;
+  }
 
   int speed_left;
   int speed_right;
@@ -115,12 +141,12 @@ int motor_steer(double dir){
   
   if(speed >= JOLT_SPEED){//If no jolt needed
     if(dir <= 0.0){
-      speed_left = (1 - (0.5 * abs(dir))) * speed;
+      speed_left = (1 - (TURN_INTENSITY * abs(dir))) * speed;
       speed_right = speed;
     }
     else{
       speed_left = speed;
-      speed_right = (1 - (0.5 * abs(dir))) * speed;
+      speed_right = (1 - (TURN_INTENSITY * abs(dir))) * speed;
     }
 
     PCA9685_SetPwmDutyCycle(LEFT,  speed_left);
@@ -135,12 +161,12 @@ int motor_steer(double dir){
     for(int i=JOLT_SPEED; i>speed; i--){
 
       if(dir <= 0.0){
-        speed_left = (1 - (0.5 * abs(dir))) * i;
+        speed_left = (1 - (TURN_INTENSITY * abs(dir))) * i;
         speed_right = i;
       }
       else{
         speed_left = i;
-        speed_right = (1 - (0.5 * abs(dir))) * i;
+        speed_right = (1 - (TURN_INTENSITY * abs(dir))) * i;
       }
       
       PCA9685_SetPwmDutyCycle(LEFT,  speed_left);

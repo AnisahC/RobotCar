@@ -29,4 +29,4 @@ int motor_pivot(uint8_t dir);
 //Pass in a double from -1 to 1:
 // - Closer to -1 means the sharper the turn left
 // - Closer to +1 means the sharper the turn right
-int motor_steer(double dir);
+int motor_steer(double dir, int speed, int heading);
