@@ -36,6 +36,7 @@ int init_button(pthread_t* t, bool*   dest, int pin,         bool initial_status
 int avoid_obstacle();
 
 #include "PCA9685.h"
+#include "motors.h"
 
 #define DEBUG_FLAG 1
 
