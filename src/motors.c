@@ -17,7 +17,7 @@
 /* Basic Controls */
 int motor_set_direction(uint8_t dir){
   #if(DEBUG_FLAG)
-  printf("motor_set_direction(%d)\n", dir);
+  //printf("motor_set_direction(%d)\n", dir);
   #endif
 
   switch(dir){
@@ -300,11 +300,29 @@ void* th_motor_avoidpivot(void* arg){
   double* data_echoB  = ((motor_param_t*) arg)->data_echoB;
 
   bool*   is_running  = ((motor_param_t*) arg)->is_running;
+
+  if(motor_set_direction(TURN_LEFT) != TURN_LEFT){
+    printf("[!] ERROR SETTING MOTOR DIRECTION!\n");
+    return NULL;
+  }
+  PCA9685_SetPwmDutyCycle(LEFT,  80);
+  PCA9685_SetPwmDutyCycle(RIGHT, 80);
+  while (!(*data_echoB > MIN_DISTANCE && *data_echoB < 35) && *is_running) {
+    usleep(50 * 1000);
+  }
+  if((*data_echoB > MIN_DISTANCE && *data_echoB < 45)){
+    if(motor_set_direction(FORWARD) != FORWARD){
+      printf("[!] ERROR SETTING MOTOR DIRECTION!\n");
+      return NULL;
+    }
+    PCA9685_SetPwmDutyCycle(LEFT,  80);
+    PCA9685_SetPwmDutyCycle(RIGHT, 80);
+    usleep(1 * 1000 * 1000);
+  }
   
-  while((*data_lineM + *data_lineIL + *data_lineIR + *data_lineL + *data_lineR) < 3 && *is_running){
+  while((*data_lineM + *data_lineIL + *data_lineIR + *data_lineL + *data_lineR) < 2 && *is_running){
     //Go forward when back sensor sees object
-    if((*data_echoB > MIN_DISTANCE && *data_echoB < 50)){
-      
+    if((*data_echoB > MIN_DISTANCE && *data_echoB < 45)){
       if(motor_set_direction(FORWARD) != FORWARD){
         printf("[!] ERROR SETTING MOTOR DIRECTION!\n");
         return NULL;
@@ -313,19 +331,18 @@ void* th_motor_avoidpivot(void* arg){
       PCA9685_SetPwmDutyCycle(RIGHT, 80);
       usleep(50 * 1000);
     }
-    else{
-      
+    else {
       if(motor_set_direction(TURN_RIGHT) != TURN_RIGHT){
         printf("[!] ERROR SETTING MOTOR DIRECTION!\n");
         return NULL;
       }
       PCA9685_SetPwmDutyCycle(LEFT,  80);
       PCA9685_SetPwmDutyCycle(RIGHT, 80);
-      usleep(750 * 1000);
-
+      usleep(1250 * 1000);
+      
       motor_stop();
       usleep(750 * 1000);
-
+      
       motor_set_speed(FORWARD, 50);
       for (int i=0; i < 200; i++) {
         if (!((*data_lineM + *data_lineIL + *data_lineIR + *data_lineL + *data_lineR) < 3 && *is_running)) {
@@ -335,7 +352,9 @@ void* th_motor_avoidpivot(void* arg){
         }
         usleep(10 * 1000);
       }
+      
     }
+    //printf("[CURRENT]: %lf, [PREV]:%d\n",*data_echoB,previous_distance);
   }
 
   #if(DEBUG_FLAG)
@@ -346,6 +365,8 @@ void* th_motor_avoidpivot(void* arg){
 
   return NULL;
 }
+
+
 void* th_motor_steering  (void* arg){
 
   #if(DEBUG_FLAG)
@@ -367,7 +388,10 @@ void* th_motor_steering  (void* arg){
   //Begin timer
   clock_t time_began = clock();
 
-  while( ((clock()-time_began) < time_limit) && (( *params->data_lineL + *params->data_lineIL + *params->data_lineM  + *params->data_lineIR + *params->data_lineR > 0) || !was_on_line) ){
+  while( ((clock()-time_began) < time_limit) && 
+          (( *params->data_lineL + *params->data_lineIL + *params->data_lineM  + *params->data_lineIR + *params->data_lineR > 0) || !was_on_line) && 
+          *params->is_running &&
+          !(*params->data_echoF < 15 && *params->data_echoF > 0)){
     
 
     int tally = 0;

@@ -204,6 +204,7 @@ int main(int argc, char* agv[]){
     if(data_lineR !=ON_THE_LINE && data_lineM != ON_THE_LINE &&
        data_lineL != ON_THE_LINE && data_lineIL != ON_THE_LINE &&
        data_lineIR != ON_THE_LINE) {
+      printf("---------NOT ON THE LINE SHOULD REVERSE-----------\n");
       motor_stop();
       usleep(250 * 1000);
       
@@ -220,7 +221,7 @@ int main(int argc, char* agv[]){
       }
 
     }
-    if (data_echoF < 35 && data_echoF > 0){
+    if (data_echoF < 15 && data_echoF > 0){
       printf("[ECHO] obstacle detected %f\n",data_echoF);
 
       pthread_create(&thread_motor, NULL, th_motor_avoidpivot, global_params);
@@ -234,7 +235,7 @@ int main(int argc, char* agv[]){
 
     global_params->direction  = FORWARD;
     global_params->heading    = 0;
-    global_params->speed      = 90;
+    global_params->speed      = 70;
     global_params->time_limit = CLOCKS_PER_SEC * 1;
 
     //motor_steer(direction / tally, 80, FORWARD);
