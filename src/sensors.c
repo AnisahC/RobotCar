@@ -267,19 +267,28 @@ void* th_rgb(void* arg) {
     // Read RGB data from the sensor
     getRGB(rgb_reading);
     
+    /*
     printf("The color is: %s with confidence %f\n", 
             getColorName(rgb_reading), getConfidence(rgb_reading));
+    */
 
+    // If it sees red, stop the program
     if ((rgb_reading->red > 10) && (9 > rgb_reading->green) && (9 > rgb_reading->blue)) {
       *rgb_red = 1;
       *flag = 0;
-    } else {*rgb_red = 0;}
+    }
+    // If it sees any other color, it is off the line
+    else {
+      *rgb_red = 0;
+    }
     
+    /*
     #if(DEBUG_FLAG)
     printf("RGB: %u, %u, %u HEX:#%02X%02X%02X\n",
             rgb_reading->red, rgb_reading->green, rgb_reading->blue,
             rgb_reading->red, rgb_reading->green, rgb_reading->blue);        
     #endif
+    */
 
     // Wait before the next read
     if (usleep(PERIOD_SCAN) != 0) {

@@ -2,6 +2,7 @@
 
 
 #include <time.h>
+#include <stdbool.h>
 
 #define LEFT           PCA_CHANNEL_5
 #define LEFT_FORWARD   PCA_CHANNEL_3
@@ -39,6 +40,19 @@ typedef struct MOTOR_PARAM{
   uint8_t speed;
   double  heading;
   clock_t time_limit;
+
+  int*    data_lineL;
+  int*    data_lineIL;
+  int*    data_lineM;
+  int*    data_lineIR;
+  int*    data_lineR;
+
+  int*    data_rgb;
+
+  double* data_echoF;
+  double* data_echoB;
+
+  bool*   is_running;
 } motor_param_t;
 
 

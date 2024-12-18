@@ -50,12 +50,6 @@ int avoid_obstacle();
 #define RIGHT_FORWARD     PCA_CHANNEL_2
 #define RIGHT_REVERSE     PCA_CHANNEL_1
 
-#define FORWARD 1
-#define REVERSE 0
-
-#define TURN_LEFT  0
-#define TURN_RIGHT 1
-
 #define ON_THE_LINE  1
 #define OFF_THE_LINE 0
 //-----------------------------------------
@@ -99,6 +93,8 @@ int turning = 0;
 int looping = 1;
 int found_obstacle = 0;
 
+motor_param_t* global_params;
+
 /* MAIN METHOD */
 int main(int argc, char* agv[]){
   double direction = 0;
@@ -123,6 +119,22 @@ int main(int argc, char* agv[]){
     return -1;
   }
 
+  //GHETTO PARAMS FOR MOTORS TO "SEE"
+  global_params = malloc(sizeof(motor_param_t));
+
+  global_params->data_lineL  = &data_lineL;
+  global_params->data_lineIL = &data_lineIL;
+  global_params->data_lineM = &data_lineM;
+  global_params->data_lineIR = &data_lineIR;
+  global_params->data_lineR = &data_lineR;
+
+  global_params->data_rgb = &data_rgb;
+  
+  global_params->data_echoF = &data_echoF;
+  global_params->data_echoB = &data_echoB;
+
+  global_params->is_running = &is_running;
+
 
   // STEP 2: SPAWN THREADS
   //printf("Spawning threads...\n");
@@ -136,6 +148,8 @@ int main(int argc, char* agv[]){
             thread_echoB,
             thread_button,
             thread_rgb;
+
+  pthread_t thread_motor;
 
   //Initialize button that will start the program
   if( init_button(&thread_button, &is_running, PIN_BUTTON, false) < 0){
@@ -165,7 +179,7 @@ int main(int argc, char* agv[]){
   printf("Starting Program...\n");
   if( (init_sensor(&thread_lineL, &data_lineL, PIN_SENSOR_LINE_L) < 0) ||
       (init_sensor(&thread_lineR, &data_lineR, PIN_SENSOR_LINE_R) < 0) ||
-      (init_sensor(&thread_lineM, &data_lineM, PIN_SENSOR_LINE_M) < 0) ||
+      (init_sensor(&thread_lineR, &data_lineM, PIN_SENSOR_LINE_M) < 0) ||
       (init_sensor(&thread_lineIR, &data_lineIR, PIN_SENSOR_LINE_INNER_R) < 0) ||
       (init_sensor(&thread_lineIL, &data_lineIL, PIN_SENSOR_LINE_INNER_L) < 0) ||
       (init_echo  (&thread_echoF, &data_echoF, PIN_SENSOR_ECHO_F_TRIGGER,  PIN_SENSOR_ECHO_F_ECHO) < 0) ||
@@ -187,47 +201,49 @@ int main(int argc, char* agv[]){
         looping = 0;
         break;
     }
-    if (data_echoF < 35 && data_echoF > 0){
-      printf("[ECHO] obstacle detected %f\n",data_echoF);
-      motor_stop();
-      usleep(200000);
-      avoid_obstacle();
-      continue;
-    }
-    if(data_lineM != 0){
-      tally++;
-    }
-    if(data_lineR != 0){
-      //printf("right sensor, turn left\n");
-      direction += 1;
-      tally++;
-    }
-    if(data_lineL != 0){
-      direction -= 1;
-      tally++;
-      //printf("left sensor, turn right\n");
-    }
-    if(data_lineIL != 0){
-      direction -= 0.8;
-      tally++;
-    }
-    if(data_lineIR != 0){
-      direction += 0.8;
-      tally++;
-    }
-
-    motor_steer(direction / tally, 80, FORWARD);
-    tally = 0;
-
-
     if(data_lineR !=ON_THE_LINE && data_lineM != ON_THE_LINE &&
        data_lineL != ON_THE_LINE && data_lineIL != ON_THE_LINE &&
        data_lineIR != ON_THE_LINE) {
       motor_stop();
       usleep(250 * 1000);
-      motor_steer(direction / tally, 80, REVERSE);
+      
+      global_params->direction  = REVERSE;
+      global_params->heading    = 0;
+      global_params->speed      = 70;
+      global_params->time_limit = CLOCKS_PER_SEC * 1.5;
+
+      //motor_steer(direction / tally, 80, FORWARD);
+      pthread_create(&thread_motor, NULL, th_motor_steering, global_params);
+      if(pthread_join(thread_motor, NULL) != 0){
+        printf("[!] Error joining thread_motor!\n");
+        return -1;
+      }
+
     }
-    gpioDelay(PERIOD_DISPLAY);
+    if (data_echoF < 35 && data_echoF > 0){
+      printf("[ECHO] obstacle detected %f\n",data_echoF);
+
+      pthread_create(&thread_motor, NULL, th_motor_avoidpivot, global_params);
+
+      if(pthread_join(thread_motor, NULL) != 0){
+        printf("[!] Error joining thread_motor!\n");
+        return -1;
+      }
+    }
+    
+
+    global_params->direction  = FORWARD;
+    global_params->heading    = 0;
+    global_params->speed      = 90;
+    global_params->time_limit = CLOCKS_PER_SEC * 1;
+
+    //motor_steer(direction / tally, 80, FORWARD);
+    pthread_create(&thread_motor, NULL, th_motor_steering, global_params);
+    if(pthread_join(thread_motor, NULL) != 0){
+        printf("[!] Error joining thread_motor!\n");
+        return -1;
+    }
+    
   }
 
   microsec_remaining = 0;
@@ -272,6 +288,9 @@ int main(int argc, char* agv[]){
     return -1;
   }
   else{printf("Joined thread_rgb\n");}
+
+  free(global_params);
+  global_params = NULL;
 
   gpioTerminate();
   return 0;
