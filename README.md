@@ -28,7 +28,7 @@ This project is a robot car built using a Raspberry Pi 4, a motor HAT, and vario
 - Writing C code to interact with hardware interface
 - Controlling motors and sensors using GPIO pins and the pigpio library
 - Enabling I2C communication between the motor HAT and sensors
-- Processing incoming data in real-time to navigat dynamically
+- Processing incoming data in real-time to navigate dynamically
 - Troubleshooting issues such as wiring, hardware failure, and code bugs
 - Leading and collaborating with a team to integrate hardware and software components.
 
